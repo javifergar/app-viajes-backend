@@ -1,5 +1,5 @@
 const router = require('express').Router();
 
-// Define your routes here
+router.use('/viajes', require('./api/viajes.routes'));
 
 module.exports = router;
