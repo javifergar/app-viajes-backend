@@ -1,67 +1,11 @@
 # app-viajes-backend
 
-## Usuarios
-
-## Recuperar todos los usuarios
-
-Method: GET
-Url: /api/usuarios
-Headers: X
-Body: X
-
-Response:
-
-- Array con todos los usuarios
-
-## Recuperar datos de un usuario
-
-Method: GET
-Url: /api/usuarios/:id
-Headers: X
-Body: X
-
-Response:
-
-- Array con todos los datos del usuario
-
-## Creación de un usuario
-
-Method: POST
-Url:/api/usuarios
-Headers: X
-Body: ...
-
-Response:
-
-- Los datos del nuevo usuario
-
-## Actualizar datos de un usuario
-
-Method: PUT
-Url: /api/usuarios/:id
-Headers: X
-Body: ...
-
-Response:
-
-- Array con todos los datos del usuario
-
-### Borrar datos de usuarios
-
-Method: DELETE
-url: /api/usuarios/:id
-Headres : X
-Body: X
-Response: ...
-
-- Borra los datos del usuario
-
 ## Viajes
 
 ## Recuperar todos los viajes
 
 Method: GET
-Url: /api/viajes
+Url: /api/trips
 Headers: X
 Body: X
 
@@ -74,51 +18,63 @@ Response:
   ## Recuperar viajes por estado
 
   Method: GET
-  Url: /api/viajes?estado={estado}
+  Url: /api/trips?estado=estado
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con estado = {estado}
+  - Array con todos los viajes con estado = estado
 
   ## Recuperar viajes por destino
 
   Method: GET
-  Url: /api/viajes?destino={pais}
+  Url: /api/trips?destino=pais, provincia o ciudad
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con destino = {pais}
+  - Array con todos los viajes con destino = pais, provincia o ciudad
 
   ## Recuperar viajes por fecha
 
   Method: GET
-  Url: /api/viajes?fecha={yyyy-mm-dd}
+  Url: /api/trips?fecha=yyyy-mm-dd
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con fecha = {yyyy-mm-dd}
+  - Array con todos los viajes con fecha = yyyy-mm-dd
 
   ## Recuperar viajes por organizador
 
   Method: GET
-  Url: /api/viajes?organizador={id_creador}
+  Url: /api/trips?organizador={nombre_creador}
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con organizador = {id_creador}
+  - Array con todos los viajes con organizador = nombre_creador
+  - Los espacios entre palabras deben sustituirse por %20 Ejemplo: Jose Antonio -> Jose%20Antonio
+
+  ## Recuperar viajes activos de un usuario
+
+  Method: GET
+  Url: /api/trips?estado={estado}&participante={id_usuario}
+  Headers: X
+  Body: X
+
+  Response:
+
+  - Array con todos los viajes del usuario
 
 ## Recuperar datos de un viaje
 
 Method: GET
-Url: /api/viajes/:id
+Url: /api/trips/:id
 Headers: X
 Body: X
 
@@ -126,23 +82,12 @@ Response:
 
 - Array con todos los datos del viaje
 
-## Recuperar viajes activos de un usuario
-
-Method: GET
-Url: /api/viajes/:id/usuario
-Headers: X
-Body: X
-
-Response:
-
-- Array con todos los viajes del usuario
-
 ## Creación de un viaje
 
 Method: POST
-Url:/api/viajes
+Url:/api/trips
 Headers: X
-Body: ...
+Body: titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes,informacion_transporte, itinerario, estado
 
 Response:
 
@@ -151,9 +96,9 @@ Response:
 ## Actualizar datos de un viaje
 
 Method: PUT
-Url: /api/viajes/:id
+Url: /api/trips/:id
 Headers: X
-Body: ...
+Body: titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes,informacion_transporte, itinerario, estado
 
 Response:
 
@@ -162,9 +107,9 @@ Response:
 ### Borrar datos de viaje
 
 Method: DELETE
-url: /api/viajes/:id
+url: /api/trips/:id
 Headres : X
 Body: X
-Response: ...
+Response:
 
 - Borra los datos del viaje

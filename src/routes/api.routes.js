@@ -1,5 +1,5 @@
 const router = require('express').Router();
 
-router.use('/viajes', require('./api/viajes.routes'));
+router.use('/trips', require('./api/trips.routes'));
 
 module.exports = router;
