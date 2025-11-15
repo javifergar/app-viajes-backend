@@ -3,7 +3,7 @@ const db = require('../config/db');
 const selectUsers = async () => {
     const [result] = await db.query('select * from users'); 
     return result;
-}
+};
 
 const selectById = async (userId) => {
     const [result] = await db.query(`
@@ -25,6 +25,14 @@ const insertUser = async (userData) => {
     const [result] = await db.query(query, values);
     return result.insertId;
     
-}
+};
 
-module.exports = { selectUsers , insertUser, selectById };
+const deleteUser = async (userId) => {
+    const [result] = await db.query(`
+        delete from users where id_user = ?
+        `, [userId]);
+    if (result.length === 0) return null;
+    return result.affectedRows === 1;
+};
+
+module.exports = { selectUsers , insertUser, selectById, deleteUser };

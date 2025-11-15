@@ -23,11 +23,22 @@ const create = async (req, res) => {
         const insertId = await UsersModel.insertUser(req.body);
         const newUser = await UsersModel.selectById(insertId);
         res.json(newUser);
-        
     } catch (error) {
         return res.status(500).json({error: 'Error al insertar el nuevo usuario!'});
     }
 
 };
 
-module.exports = { getAll, getById, create };
+const remove = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const success = await UsersModel.deleteUser(userId); 
+        if (!success) return res.status(404).json({ message: 'Id de Usuario no existe' });
+        res.json({message: `El usuario con id [${userId}] ha sido eliminado con éxito.`});
+    } catch (error) {
+        console.error('Error en controlador remove:', error);
+        return res.status(500).json({ error: 'Error interno al eliminar el usuario' });
+    }
+};
+
+module.exports = { getAll, getById, create, remove };
