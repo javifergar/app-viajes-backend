@@ -16,7 +16,7 @@ Response:
 ## Recuperar datos de un usuario
 
 Method: GET
-Url: /api/usuarios/:id
+Url: /api/usuarios/:idUser
 Headers: X
 Body: X
 
@@ -37,8 +37,8 @@ Response:
 
 ## Actualizar datos de un usuario
 
-Method: PUT
-Url: /api/usuarios/:id
+Method: PATCH
+Url: /api/usuarios/:idUser
 Headers: X
 Body: ...
 
@@ -49,7 +49,7 @@ Response:
 ### Borrar datos de usuarios
 
 Method: DELETE
-url: /api/usuarios/:id
+url: /api/usuarios/:idUser
 Headres : X
 Body: X
 Response: ...
