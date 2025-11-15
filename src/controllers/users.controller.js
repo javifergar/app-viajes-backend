@@ -29,6 +29,27 @@ const create = async (req, res) => {
 
 };
 
+const update = async (req, res) => {
+    try {
+        // Extracción de parámetros (no usar await)
+        const { userId } = req.params;
+        const userData = req.body; // Datos a actualizar
+        // Llamada al modelo
+        const affectedRows = await UsersModel.updateUser(userId, userData);
+        // El usuario no fue encontrado o no se proporcionaron campos para actualizar
+        if (affectedRows === 0) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
+        // Devolvemos el recurso modificado
+        const userModified = await UsersModel.selectById(userId);
+        
+        res.json(userModified); 
+
+    } catch (error) {
+        console.error('Error al modificar el usuario:', error);
+        return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
+    }
+
+};
+
 const remove = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -41,4 +62,4 @@ const remove = async (req, res) => {
     }
 };
 
-module.exports = { getAll, getById, create, remove };
+module.exports = { getAll, getById, create, remove, update };

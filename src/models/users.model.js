@@ -27,6 +27,34 @@ const insertUser = async (userData) => {
     
 };
 
+const updateUser = async (userId, userData) => {
+    // 1. Construir la parte dinámica del SET
+    const fields = [];
+    const values = [];
+    // Recorremos los datos que se quieren actualizar (userData = req.body)
+    for (const key in userData) {
+        // Ignoramos campos sensibles que deben ser tratados por separado (ej. password)
+        if (userData[key] !== undefined) {
+            fields.push(`${key} = ?`);
+            values.push(userData[key]);
+        }
+    }
+    // Si no hay campos para actualizar, no hacemos nada
+    if (fields.length === 0) return null;
+    // 2. Construir la sentencia SQL completa
+    // INSERTAMOS EL ID DEL USUARIO AL FINAL del array de valores para el WHERE
+    values.push(userId);
+    const query = `
+        UPDATE users 
+        SET ${fields.join(', ')} 
+        WHERE id_user = ? 
+    `;
+    const [result] = await db.query(query, values);
+    // Retornamos las filas afectadas
+    return result.affectedRows; 
+};
+
+
 const deleteUser = async (userId) => {
     const [result] = await db.query(`
         delete from users where id_user = ?
@@ -35,4 +63,4 @@ const deleteUser = async (userId) => {
     return result.affectedRows === 1;
 };
 
-module.exports = { selectUsers , insertUser, selectById, deleteUser };
+module.exports = { selectUsers , insertUser, selectById, updateUser, deleteUser };
