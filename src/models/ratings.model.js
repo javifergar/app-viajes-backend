@@ -1,0 +1,122 @@
+const db = require('../config/db');
+
+/**
+ * Obtiene todas las valoraciones de un viaje ordenadas por fecha descendente.
+ * @param {number} idTrip - Identificador del viaje (`ratings.id_trip`).
+ * @returns {Promise<Array>} Lista de valoraciones del viaje.
+ */
+const selectByTrip = async (idTrip) => {
+  const [rows] = await db.query(
+    `SELECT * FROM ratings WHERE id_trip = ? ORDER BY created_at DESC`,
+    [idTrip]
+  );
+  return rows;
+};
+
+/**
+ * Obtiene todas las valoraciones recibidas por un usuario ordenadas por fecha descendente.
+ * @param {number} idUser - Identificador del usuario valorado (`ratings.id_reviewed`).
+ * @returns {Promise<Array>} Lista de valoraciones recibidas.
+ */
+const selectForUser = async (idUser) => {
+  const [rows] = await db.query(
+    `SELECT * FROM ratings WHERE id_reviewed = ? ORDER BY created_at DESC`,
+    [idUser]
+  );
+  return rows;
+};
+
+/**
+ * Recupera una valoración concreta por su id.
+ * @param {number} idRating - Identificador de la valoración (`ratings.id_rating`).
+ * @returns {Promise<Object|null>} Valoración encontrada o null si no existe.
+ */
+const selectById = async (idRating) => {
+  const [rows] = await db.query(
+    `SELECT * FROM ratings WHERE id_rating = ?`,
+    [idRating]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * Inserta una nueva valoración.
+ * @param {Object} ratingData - Datos de la valoración.
+ * @param {number} ratingData.id_trip - Viaje valorado.
+ * @param {number} ratingData.id_reviewer - Usuario que valora.
+ * @param {number} ratingData.id_reviewed - Usuario valorado.
+ * @param {number} ratingData.score - Puntuación (0-10).
+ * @param {string} [ratingData.comment] - Comentario opcional.
+ * @returns {Promise<number>} ID autogenerado de la nueva valoración.
+ */
+const insertRating = async ({ id_trip, id_reviewer, id_reviewed, score, comment }) => {
+  const [result] = await db.query(
+    `INSERT INTO ratings (id_trip, id_reviewer, id_reviewed, score, comment)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id_trip, id_reviewer, id_reviewed, score, comment || null]
+  );
+  return result.insertId;
+};
+
+/**
+ * Actualiza campos permitidos de una valoración.
+ * @param {number} idRating - ID de la valoración a actualizar.
+ * @param {Object} fields - Campos a modificar (score y/o comment).
+ * @returns {Promise<number>} Número de filas afectadas (0 si no se actualiza nada).
+ */
+const updateRating = async (idRating, fields) => {
+  const set = [];
+  const values = [];
+  ['score', 'comment'].forEach((key) => {
+    if (fields[key] !== undefined) {
+      set.push(`${key} = ?`);
+      values.push(fields[key]);
+    }
+  });
+  if (set.length === 0) return null;
+  values.push(idRating);
+  const [result] = await db.query(
+    `UPDATE ratings SET ${set.join(', ')} WHERE id_rating = ?`,
+    values
+  );
+  return result.affectedRows;
+};
+
+/**
+ * Elimina una valoración por su ID.
+ * @param {number} idRating - Identificador de la valoración a borrar.
+ * @returns {Promise<number>} Número de filas afectadas (0 si no existía).
+ */
+const deleteRating = async (idRating) => {
+  const [result] = await db.query(
+    `DELETE FROM ratings WHERE id_rating = ?`,
+    [idRating]
+  );
+  return result.affectedRows === 1;
+};
+
+/**
+ * Recalcula la media y el contador de valoraciones de un usuario valorado.
+ * @param {number} idUser - Identificador del usuario (`users.id_user`).
+ * @returns {Promise<void>}
+ */
+const recalcUserAggregates = async (idUser) => {
+  await db.query(
+    `UPDATE users u
+     SET 
+       average_rating = COALESCE((SELECT AVG(score) FROM ratings r WHERE r.id_reviewed = u.id_user), 0),
+       rating_count = (SELECT COUNT(*) FROM ratings r WHERE r.id_reviewed = u.id_user)
+     WHERE u.id_user = ?`,
+    [idUser]
+  );
+};
+
+module.exports = {
+  selectByTrip,
+  selectForUser,
+  selectById,
+  insertRating,
+  updateRating,
+  deleteRating,
+  recalcUserAggregates,
+};

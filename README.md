@@ -179,3 +179,60 @@ Body: { username, email, password}
 
 Response: 
 - Mensaje de confirmacion y Token
+
+## Valoraciones
+
+### Crear una valoración
+
+Method: POST
+Url: /api/valoraciones
+Headers: Token
+Body: { id_trip, id_reviewed, score (0-10), comment? }
+
+Response:
+
+- Datos de la nueva valoración y medias del usuario valorado si se recalculan
+
+### Listar valoraciones de un viaje
+
+Method: GET
+Url: /api/valoraciones/viaje/:idTrip
+Headers: X
+Body: X
+
+Response:
+
+- Array con las valoraciones hechas en ese viaje, con autor (id_reviewer), usuario valorado (id_reviewed), puntuación y comentario
+
+### Listar valoraciones recibidas por un usuario
+
+Method: GET
+Url: /api/valoraciones/usuario/:idUser
+Headers: X
+Body: X
+
+Response:
+
+- Array con valoraciones recibidas por el usuario y datos como puntuación media, rating_count
+
+### Actualizar una valoración
+
+Method: PATCH
+Url: /api/valoraciones/:idRating
+Headers: ?
+Body: { score?, comment? }
+
+Response:
+
+- Valoración actualizada
+
+### Borrar una valoración
+
+Method: DELETE
+Url: /api/valoraciones/:idRating
+Headers: Token
+Body: X
+
+Response:
+
+- Confirmación de borrado de la valoración (dando la valoración borrada), 
