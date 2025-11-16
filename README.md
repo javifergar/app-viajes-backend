@@ -170,7 +170,7 @@ Response: ...
 - Borra los datos del viaje
 
 
-### Registro de usuarios
+### Login usuarios
 
 Method: POST
 url: /api/users/login
@@ -178,4 +178,4 @@ Headres : X
 Body: { username, email, password}
 
 Response: 
-- Mensaje de confirmacion y los datos del nuevo usuario
+- Mensaje de confirmacion y Token
