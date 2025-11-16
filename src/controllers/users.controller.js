@@ -15,6 +15,7 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
     const { userId } = req.params;
     const user = await UsersModel.selectById(userId);
+    delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada
     if (!user) return res.status(404).json({message: 'Id Usuario no existe'});
     res.json(user);
 };
