@@ -1,6 +1,7 @@
 
-const pool = require('../config/db'); // Ajusta la ruta a donde guardaste db.js
+const pool = require('../config/db');  
 const UsersModel = require('../models/users.model');
+const bcrypt = require('bcryptjs');
 
 const getAll = async (req, res) => {
     try {
@@ -19,6 +20,7 @@ const getById = async (req, res) => {
 };
 
 const create = async (req, res) => {
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
     try {
         const insertId = await UsersModel.insertUser(req.body);
         const newUser = await UsersModel.selectById(insertId);
