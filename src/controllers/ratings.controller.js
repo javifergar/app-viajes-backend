@@ -62,11 +62,12 @@ const updateRating = async (req, res) => {
 
     const affectedRows = await RatingsModel.updateRating(idRating, { score, comment });
 
-    if (affectedRows === null || affectedRows === 0) return res.status(400).json({ message: 'No hay campos válidos para actualizar' });
+    if (affectedRows === 0) return res.status(400).json({ message: 'No hay campos válidos para actualizar' });
 
     const updated = await RatingsModel.selectById(idRating);
     await RatingsModel.recalcUserAggregates(rating.id_reviewed);
     res.json(updated);
+    
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Ya existe una valoración para este viaje y usuario' });

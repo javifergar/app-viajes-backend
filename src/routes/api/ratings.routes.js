@@ -9,11 +9,11 @@ const {
 
 // Valoraciones de un viaje concreto
 // TODO: Crear el midlleWare que verifique que esta el viaje en la base de datos.
-router.get('/viaje/:idTrip', listByTrip);
+router.get('/trip/:idTrip', listByTrip);
 
 // Valoraciones recibidas por un usuario
 // TODO: Crear el MiddleWare que verifique que el usuario existe. 
-router.get('/usuario/:idUser', listForUser);
+router.get('/user/:idUser', listForUser);
 
 // Crear una valoración tras finalizar un viaje
 // TODO: El middleWare debe verificar que existe el usuario y el viaje y que esta asociados. 
