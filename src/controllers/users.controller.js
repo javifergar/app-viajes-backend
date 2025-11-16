@@ -2,6 +2,7 @@
 const pool = require('../config/db');  
 const UsersModel = require('../models/users.model');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken')
 
 const getAll = async (req, res) => {
     try {
@@ -30,6 +31,24 @@ const create = async (req, res) => {
         return res.status(500).json({error: 'Error al insertar el nuevo usuario!'});
     }
 
+};
+
+const login = async (req, res) => {
+    const { email, password } = req.body;
+    // ¿existe email?
+        // recupero el usuario
+    const user = await UsersModel.selectByEmail(email);
+    if (!user) return res.status(401).json({message: 'Error email y/o password'}) // no se pone solo email par no dar pistas (ciberseguridad)
+    // ¡coinciden las passw?
+    const success = bcrypt.compareSync(password, user.password);
+    if (!success) return res.status(401).json({message: 'Error email y/o password'});
+    res.json({ 
+        message: 'Login correcto!',
+        token: jwt.sign( 
+            { userId: user.userId }, 
+            process.env.SECRET_KEY 
+        ) 
+    });
 };
 
 const update = async (req, res) => {
@@ -65,4 +84,4 @@ const remove = async (req, res) => {
     }
 };
 
-module.exports = { getAll, getById, create, remove, update };
+module.exports = { getAll, getById, create, login, remove, update };

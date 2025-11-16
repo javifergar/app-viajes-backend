@@ -14,6 +14,15 @@ const selectById = async (userId) => {
     return result[0];
 };
 
+const selectByEmail = async (email) => {
+    const [result] = await db.query(`
+        select * from users
+        where email = ?
+        `, [email] );
+    if (result.length === 0) return null;
+    return result[0];
+};
+
 const insertUser = async (userData) => {
     const { name, email, password, phone, photo_url, bio, interests, average_rating, rating_count } = userData;
     const query = `
@@ -63,4 +72,4 @@ const deleteUser = async (userId) => {
     return result.affectedRows === 1;
 };
 
-module.exports = { selectUsers , insertUser, selectById, updateUser, deleteUser };
+module.exports = { selectUsers , insertUser, selectById, selectByEmail, updateUser, deleteUser };
