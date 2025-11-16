@@ -1,5 +1,61 @@
 # app-viajes-backend
 
+## Usuarios
+
+## Recuperar todos los usuarios
+
+Method: GET
+Url: /api/usuarios
+Headers: X
+Body: X
+
+Response:
+
+- Array con todos los usuarios
+
+## Recuperar datos de un usuario
+
+Method: GET
+Url: /api/usuarios/:idUser
+Headers: X
+Body: X
+
+Response:
+
+- Array con todos los datos del usuario
+
+## Creación de un usuario
+
+Method: POST
+Url:/api/usuarios
+Headers: X
+Body: ...
+
+Response:
+
+- Los datos del nuevo usuario
+
+## Actualizar datos de un usuario
+
+Method: PATCH
+Url: /api/usuarios/:idUser
+Headers: X
+Body: ...
+
+Response:
+
+- Array con todos los datos del usuario
+
+### Borrar datos de usuarios
+
+Method: DELETE
+url: /api/usuarios/:idUser
+Headres : X
+Body: X
+Response: ...
+
+- Borra los datos del usuario
+
 ## Viajes
 
 ## Recuperar todos los viajes
@@ -113,3 +169,14 @@ Body: X
 Response:
 
 - Borra los datos del viaje
+
+
+### Login usuarios
+
+Method: POST
+url: /api/users/login
+Headres : X
+Body: { username, email, password}
+
+Response: 
+- Mensaje de confirmacion y Token
