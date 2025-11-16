@@ -1,6 +1,7 @@
 
-const pool = require('../config/db'); // Ajusta la ruta a donde guardaste db.js
+const pool = require('../config/db');  
 const UsersModel = require('../models/users.model');
+const bcrypt = require('bcryptjs');
 
 const getAll = async (req, res) => {
     try {
@@ -14,11 +15,13 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
     const { userId } = req.params;
     const user = await UsersModel.selectById(userId);
+    delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada
     if (!user) return res.status(404).json({message: 'Id Usuario no existe'});
     res.json(user);
 };
 
 const create = async (req, res) => {
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
     try {
         const insertId = await UsersModel.insertUser(req.body);
         const newUser = await UsersModel.selectById(insertId);
