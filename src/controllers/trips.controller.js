@@ -5,8 +5,8 @@ const getAllTrips = async (req, res) => {
   res.json(trips);
 };
 const getTripById = async (req, res) => {
-  const { id } = req.params;
-  const trip = await TripModel.tripsById(id);
+  const { tripId } = req.params;
+  const trip = await TripModel.tripsById(tripId);
   if (!trip) return res.status(404).json({ message: 'Trip doesn´t exist' });
   res.json(trip);
 };
@@ -16,15 +16,15 @@ const createTrip = async (req, res) => {
   res.json(trip);
 };
 const updateTrip = async (req, res) => {
-  const { id } = req.params;
-  await TripModel.updateTrip(id, req.body);
-  const trip = await TripModel.tripsById(id);
+  const { tripId } = req.params;
+  await TripModel.updateTrip(tripId, req.body);
+  const trip = await TripModel.tripsById(tripId);
   res.json(trip);
 };
 const deleteTrip = async (req, res) => {
-  const { id } = req.params;
-  const trip = await TripModel.tripsById(id);
-  await TripModel.deleteTrip(id);
+  const { tripId } = req.params;
+  const trip = await TripModel.tripsById(tripId);
+  await TripModel.deleteTrip(tripId);
   if (!trip) {
     return res.json({
       message: 'No existe este viaje',

@@ -1,28 +1,28 @@
 const db = require('../config/db');
 
 const selectTrips = async (filters = {}) => {
-  let sql = 'select v.*, u.nombre as creator_name from viajes v inner join usuarios u on v.id_creador = u.id_usuario where 1=1';
+  let sql = 'select t.*, u.name as creator_name from trips t inner join users u on t.id_creator = u.id_user where 1=1';
   const params = [];
-  const { estado, destino, fecha, organizador, participante } = filters;
-  if (estado) {
-    sql += ' and v.estado = ?';
-    params.push(estado);
+  const { status, destination, date, creator, participant } = filters;
+  if (status) {
+    sql += ' and t.status = ?';
+    params.push(status);
   }
-  if (destino) {
-    sql += ' and v.destino LIKE ?';
-    params.push(`%${destino}%`);
+  if (destination) {
+    sql += ' and t.destination LIKE ?';
+    params.push(`%${destination}%`);
   }
-  if (fecha) {
-    sql += ' and v.start_date = ?';
-    params.push(fecha);
+  if (date) {
+    sql += ' and t.start_date = ?';
+    params.push(date);
   }
-  if (organizador) {
-    sql += ' and u.nombre LIKE ?';
-    params.push(`%${organizador}%`);
+  if (creator) {
+    sql += ' and u.name LIKE ?';
+    params.push(`%${creator}%`);
   }
-  if (participante) {
-    sql += ` and exists (select 1 from participantes_viaje pv where pv.id_viaje = v.id_viaje and pv.id_usuario = ? and pv.estado = 'aceptado')`;
-    params.push(participante);
+  if (participant) {
+    sql += ` and exists (select 1 from trip_participants tp where tp.id_trip = t.id_trip and tp.id_user = ? and tp.status = 'accepted')`;
+    params.push(participant);
   }
 
   const [result] = await db.query(sql, params);
@@ -30,45 +30,46 @@ const selectTrips = async (filters = {}) => {
 };
 
 const tripsById = async (tripId) => {
-  const [result] = await db.query('select * from viajes where id_viaje = ?', [tripId]);
+  const [result] = await db.query('select * from trips where id_trip = ?', [tripId]);
   if (result.length === 0) return null;
   return result[0];
 };
 
-const insertTrip = async ({
-  id_creador,
-  titulo,
-  descripcion,
-  destino,
-  start_date,
-  end_date,
-  coste_por_persona,
-  minimo_participantes,
-  informacion_transporte,
-  informacion_alojamiento,
-  itinerario,
-  estado,
-}) => {
+const insertTrip = async ({ id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status }) => {
   const [result] = await db.query(
-    'insert into viajes (id_creador,titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes, informacion_transporte, informacion_alojamiento, itinerario, estado ) values (?,?,?,?,?,?,?,?,?,?,?,?)',
-    [id_creador, titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes, informacion_transporte, informacion_alojamiento, itinerario, estado]
+    `insert into trips 
+    (id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status) 
+    values (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status]
   );
+
   return result;
 };
 
-const updateTrip = async (
-  viajeId,
-  { id_creador, titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes, informacion_transporte, informacion_alojamiento, itinerario, estado }
-) => {
+const updateTrip = async (tripId, { id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status }) => {
   const [result] = await db.query(
-    'update viajes set id_creador=?,titulo=?, descripcion=?, destino=?, start_date=?, end_date=?, coste_por_persona=?, minimo_participantes=?, informacion_transporte=?, informacion_alojamiento=?, itinerario=?, estado=? where id_viaje = ?',
-    [id_creador, titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes, informacion_transporte, informacion_alojamiento, itinerario, estado, viajeId]
+    `update trips set
+       id_creator = ?,
+       title = ?,
+       description = ?,
+       destination = ?,
+       start_date = ?,
+       end_date = ?,
+       cost_per_person = ?,
+       min_participants = ?,
+       transport_info = ?,
+       accommodation_info = ?,
+       itinerary = ?,
+       status = ?
+     where id_trip = ?`,
+    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, tripId]
   );
+
   return result;
 };
 
 const deleteTrip = async (tripId) => {
-  const [result] = await db.query('delete from viajes where id_viaje = ?', [tripId]);
+  const [result] = await db.query('delete from trips where id_trip = ?', [tripId]);
   return result;
 };
 
