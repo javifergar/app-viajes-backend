@@ -2,6 +2,7 @@
 const pool = require('../config/db');  
 const UsersModel = require('../models/users.model');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken')
 
 const getAll = async (req, res) => {
     try {
@@ -41,7 +42,13 @@ const login = async (req, res) => {
     // ¡coinciden las passw?
     const success = bcrypt.compareSync(password, user.password);
     if (!success) return res.status(401).json({message: 'Error email y/o password'});
-    res.json({ message: 'Login correcto! (este msg se cambiará cuando implementemos los TOKENS'}); // ¡¡¡TOKEN DESDE ESTA LINEA
+    res.json({ 
+        message: 'Login correcto!',
+        token: jwt.sign( 
+            { userId: user.userId }, 
+            process.env.SECRET_KEY 
+        ) 
+    });
 };
 
 const update = async (req, res) => {
