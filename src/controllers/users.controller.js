@@ -32,6 +32,18 @@ const create = async (req, res) => {
 
 };
 
+const login = async (req, res) => {
+    const { email, password } = req.body;
+    // ¿existe email?
+        // recupero el usuario
+    const user = await UsersModel.selectByEmail(email);
+    if (!user) return res.status(401).json({message: 'Error email y/o password'}) // no se pone solo email par no dar pistas (ciberseguridad)
+    // ¡coinciden las passw?
+    const success = bcrypt.compareSync(password, user.password);
+    if (!success) return res.status(401).json({message: 'Error email y/o password'});
+    res.json({ message: 'Login correcto! (este msg se cambiará cuando implementemos los TOKENS'}); // ¡¡¡TOKEN DESDE ESTA LINEA
+};
+
 const update = async (req, res) => {
     try {
         // Extracción de parámetros (no usar await)
@@ -65,4 +77,4 @@ const remove = async (req, res) => {
     }
 };
 
-module.exports = { getAll, getById, create, remove, update };
+module.exports = { getAll, getById, create, login, remove, update };
