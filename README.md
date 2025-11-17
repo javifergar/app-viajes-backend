@@ -65,6 +65,26 @@ Url: /api/trips
 Headers: X
 Body: X
 
+Ejemplo:
+{
+"id_trip": 1,
+"id_creator": 1,
+"title": "Aventura en Islandia",
+"description": "Exploración de glaciares, géiseres y auroras boreales",
+"destination": "Islandia",
+"start_date": "2026-01-14T23:00:00.000Z",
+"end_date": "2026-01-21T23:00:00.000Z",
+"cost_per_person": "1200.00",
+"min_participants": 4,
+"transport_info": "Vuelo directo a Reikiavik, coche alquilado",
+"accommodation_info": "Cabañas rurales en el norte",
+"itinerary": "Día 1: llegada, Día 2: excursiones, Día 3: termas",
+"status": "open",
+"created_at": "2025-11-16T19:05:21.000Z",
+"updated_at": "2025-11-16T19:05:21.000Z",
+"creator_name": "Juan Marquez"
+}
+
 Response:
 
 - Array con todos los viajes
@@ -74,52 +94,52 @@ Response:
   ## Recuperar viajes por estado
 
   Method: GET
-  Url: /api/trips?estado=estado
+  Url: /api/trips?status=estado
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con estado = estado
+  - Array con todos los viajes con status = estado
 
   ## Recuperar viajes por destino
 
   Method: GET
-  Url: /api/trips?destino=pais, provincia o ciudad
+  Url: /api/trips?destination=pais, provincia o ciudad
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con destino = pais, provincia o ciudad
+  - Array con todos los viajes con destination = pais, provincia o ciudad
 
   ## Recuperar viajes por fecha
 
   Method: GET
-  Url: /api/trips?fecha=yyyy-mm-dd
+  Url: /api/trips?date=yyyy-mm-dd
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con fecha = yyyy-mm-dd
+  - Array con todos los viajes con start_date = yyyy-mm-dd
 
   ## Recuperar viajes por organizador
 
   Method: GET
-  Url: /api/trips?organizador={nombre_creador}
+  Url: /api/trips?creator={nombre_creador}
   Headers: X
   Body: X
 
   Response:
 
-  - Array con todos los viajes con organizador = nombre_creador
+  - Array con todos los viajes con creator = nombre_creador
   - Los espacios entre palabras deben sustituirse por %20 Ejemplo: Jose Antonio -> Jose%20Antonio
 
   ## Recuperar viajes activos de un usuario
 
   Method: GET
-  Url: /api/trips?estado={estado}&participante={id_usuario}
+  Url: /api/trips?destination={destination}&participants={id_usuario}
   Headers: X
   Body: X
 
@@ -143,7 +163,7 @@ Response:
 Method: POST
 Url:/api/trips
 Headers: X
-Body: titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes,informacion_transporte, itinerario, estado
+Body: id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status
 
 Response:
 
@@ -154,7 +174,7 @@ Response:
 Method: PUT
 Url: /api/trips/:id
 Headers: X
-Body: titulo, descripcion, destino, start_date, end_date, coste_por_persona, minimo_participantes,informacion_transporte, itinerario, estado
+Body: id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, trip_id
 
 Response:
 
@@ -170,7 +190,6 @@ Response:
 
 - Borra los datos del viaje
 
-
 ### Login usuarios
 
 Method: POST
@@ -178,7 +197,8 @@ url: /api/users/login
 Headres : X
 Body: { username, email, password}
 
-Response: 
+Response:
+
 - Mensaje de confirmacion y Token
 
 ## Valoraciones
@@ -236,4 +256,4 @@ Body: X
 
 Response:
 
-- Confirmación de borrado de la valoración (dando la valoración borrada), 
+- Confirmación de borrado de la valoración (dando la valoración borrada),
