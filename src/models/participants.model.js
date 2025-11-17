@@ -1,0 +1,137 @@
+// Define your model here
+const db = require('../config/db');
+
+// Obtener una participacion por id
+const selectParticipationById = async (participationId) => {
+  const [result] = await db.query(
+    `
+      SELECT *
+      FROM trip_participants
+      WHERE id_participation = ?
+    `,
+    [participationId]
+  );
+
+  if (result.length === 0) return null;
+  return result[0];
+};
+
+// Participantes/solicitudes de un viaje (con status opcional)
+const selectParticipantsByTrip = async (tripId, status) => {
+  let sql = `
+    SELECT *
+    FROM trip_participants
+    WHERE id_trip = ?
+  `;
+  const values = [tripId];
+
+  if (status) {
+    sql += ' AND status = ?';
+    values.push(status);
+  }
+
+  sql += ' ORDER BY created_at DESC';
+
+  const [result] = await db.query(sql, values);
+  return result; 
+};
+
+// Solicitudes donde YO soy el SOLICITANTE ( con status opcional)
+const selectMyRequests = async (userId, status) => {
+  let sql = `
+    SELECT *
+    FROM trip_participants
+    WHERE id_user = ?
+  `;
+  const values = [userId];
+
+  if (status) {
+    sql += ' AND status = ?';
+    values.push(status);
+  }
+
+  sql += ' ORDER BY created_at DESC';
+
+  const [result] = await db.query(sql, values);
+  return result;
+};
+
+// Solicitudes de TODOS los viajes que yo(el usuario) he creado (CREADOR)
+const selectMyCreatorRequests = async (userId, status) => {
+  let sql = `
+    SELECT p.*
+    FROM trip_participants p
+    JOIN trips t ON t.id_trip = p.id_trip
+    WHERE t.id_creator = ?
+  `;
+  const values = [userId];
+
+  if (status) {
+    sql += ' AND p.status = ?';
+    values.push(status);
+  }
+
+  sql += ' ORDER BY p.created_at DESC';
+
+  const [result] = await db.query(sql, values);
+  return result;
+};
+
+//  Comprobar si ya existe participación para un par viaje/usuario
+const selectByTripAndUser = async (tripId, userId) => {
+  const [result] = await db.query(
+    `
+      SELECT *
+      FROM trip_participants
+      WHERE id_trip = ? AND id_user = ?
+    `,
+    [tripId, userId]
+  );
+
+  if (result.length === 0) return null;
+  return result[0];
+};
+
+//  Insertar/create una nueva participación/solicitud
+const insertParticipation = async (tripId, userId, message) => {
+  const query = `
+    INSERT INTO trip_participants (id_trip, id_user, message, status)
+    VALUES (?, ?, ?, 'pending')
+  `;
+  const values = [tripId, userId, message || null];
+
+  const [result] = await db.query(query, values);
+  return result.insertId;
+};
+
+// Actualizar/update estado de una participación/solicitud
+const updateParticipationStatus = async (participationId, status) => {
+  const correctStatus = ['pending', 'accepted', 'rejected', 'left'];
+  if (!correctStatus.includes(status)) {
+    const err = new Error('Invalid status');
+    err.code = 'INVALID_STATUS';
+    throw err;
+  }
+
+  const query = `
+    UPDATE trip_participants
+    SET status = ?
+    WHERE id_participation = ?
+  `;
+  const values = [status, participationId];
+
+  const [result] = await db.query(query, values);
+  return result.affectedRows; 
+};
+
+
+
+module.exports = {
+  selectParticipationById,
+  selectParticipantsByTrip,
+  selectMyRequests,
+  selectMyCreatorRequests,
+  selectByTripAndUser,
+  insertParticipation,
+  updateParticipationStatus,
+};

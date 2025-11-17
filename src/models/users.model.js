@@ -63,6 +63,17 @@ const updateUser = async (userId, userData) => {
     return result.affectedRows; 
 };
 
+const updateAllUser = async (userId, userData) => {
+    const { name, email, password, phone, photo_url, bio, interests, average_rating, rating_count } = userData;
+    const query = `
+            UPDATE users SET 
+            name = ?, email = ?, password = ?, phone = ?, photo_url = ?, bio = ?, interests = ?, average_rating = ?, rating_count = ? 
+            WHERE id_user = ? 
+        `;
+    const values = [ name, email, password, phone, photo_url, bio, interests, average_rating, rating_count, userId];
+    const [result] = await db.query(query, values);
+    return result;
+};
 
 const deleteUser = async (userId) => {
     const [result] = await db.query(`
@@ -72,4 +83,4 @@ const deleteUser = async (userId) => {
     return result.affectedRows === 1;
 };
 
-module.exports = { selectUsers , insertUser, selectById, selectByEmail, updateUser, deleteUser };
+module.exports = { selectUsers , insertUser, selectById, selectByEmail, updateUser,updateAllUser, deleteUser };
