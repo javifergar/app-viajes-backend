@@ -7,21 +7,22 @@ require('dotenv').config(); // Carga las variables del archivo .env
 
 // 2. Definir la configuración del pool de conexión
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    
-    // ** CONFIGURACIÓN SSL CRÍTICA PARA AIVEN **
-    ssl: {
-        // Lee el contenido del archivo CA que descargaste
-        ca: fs.readFileSync(process.env.SSL_CA_PATH) 
-    },
-    
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+
+  // ** CONFIGURACIÓN SSL CRÍTICA PARA AIVEN **
+  ssl: {
+    // Lee el contenido del archivo CA que descargaste
+    // ca: fs.readFileSync(process.env.SSL_CA_PATH)
+    ca: process.env.SSL_CA,
+  },
+
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 // 3. Exportar el pool para usarlo en tus controladores (CRUD)
