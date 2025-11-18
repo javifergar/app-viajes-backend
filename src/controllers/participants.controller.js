@@ -1,5 +1,5 @@
 const ParticipantsModel = require('../models/participants.model');
-//const TripsModel = require('../models/trips.model');
+const TripsModel = require('../models/trips.model');
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -56,7 +56,7 @@ const getParticipantsByTrip = async (req, res) => {
 const getMyRequests = async (req, res) => {
     try {
        // const userId = req.user.userId; 
-        const userId = 1; // PRUEBAS
+        const userId = 2; // PRUEBAS
         const { status } = req.query;
 
         const requests = await ParticipantsModel.selectMyRequests(userId, status);
@@ -101,12 +101,12 @@ const createParticipation = async (req, res) => {
     try {
         const { trip_id } = req.params;
         //const userId = req.user.userId;
-        const userId = 1; // PRUEBAS
+        const userId = 10; // PRUEBAS
         const { message } = req.body;
 
-        /*
+        
         // Verifica que el viaje existe
-        const trip = await TripsModel.selectTripById(trip_id);
+        const trip = await TripsModel.tripsById(trip_id);
 
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found' });
@@ -121,9 +121,9 @@ const createParticipation = async (req, res) => {
         
         // Verifica que el usuario NO puede unirse a su propio viaje
         if (trip.id_creator === userId) {
-            return res.status(400).json({ error: 'You can't join your own trip' });
+            return res.status(400).json({ error: 'You cant join your own trip' });
         }
-        */
+        
         
         // Verifica si ya hay registro en la tabla trip_participants (si ya existe solicitud previa)
         const existing = await ParticipantsModel.selectByTripAndUser(trip_id, userId);
@@ -184,7 +184,7 @@ const updateParticipationStatus = async (req, res) => {
         console.error('Error in updateParticipationStatus:', error);
 
         if (error.code === 'INVALID_STATUS') {
-            return res.status(400).json({ error: 'Invalid status value. Set acceoted, rejected, left or pending' });
+            return res.status(400).json({ error: 'Invalid status value. Set accepted, rejected, left or pending' });
         }
 
         return res.status(500).json({ error: 'Internal server error' });
