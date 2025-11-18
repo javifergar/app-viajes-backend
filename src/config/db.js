@@ -16,7 +16,11 @@ const pool = mysql.createPool({
   // ** CONFIGURACIÓN SSL CRÍTICA PARA AIVEN **
   ssl: {
     // Lee el contenido del archivo CA que descargaste
+
+    //UTILIZAR MIENTRAS SE DESARROLLA
     // ca: fs.readFileSync(process.env.SSL_CA_PATH)
+
+    //UTILIZAR CUANDO SE HAGA PUSH
     ca: process.env.SSL_CA,
   },
 
