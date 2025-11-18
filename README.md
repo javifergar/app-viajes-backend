@@ -257,3 +257,285 @@ Body: X
 Response:
 
 - Confirmación de borrado de la valoración (dando la valoración borrada),
+
+
+## Participants
+
+### 1. Ver una determinada solicitud
+
+Method: GET  
+Url: /api/participants/:participation_id  
+Headers: X  
+Body: X  
+
+Ejemplo de respuesta:
+
+{
+  "id_participation": 10,
+  "id_trip": 1,
+  "id_user": 2,
+  "status": "accepted",
+  "message": "Solicitud pendiente del usuario 2 en el viaje 1.",
+  "created_at": "2025-11-16T21:19:13.000Z",
+  "updated_at": "2025-11-16T22:35:25.000Z"
+}
+
+Response:
+
+- Objeto con los datos de la solicitud
+
+
+### 2. Ver solicitudes/participantes de un viaje (todos los estados)
+
+Method: GET  
+Url: /api/participants/trip/:trip_id  
+Headers: X  
+Body: X  
+
+Ejemplo de respuesta:
+
+[
+  {
+    "id_participation": 10,
+    "id_trip": 1,
+    "id_user": 2,
+    "status": "accepted",
+    "message": "Solicitud pendiente extra del usuario 2 en el viaje 1.",
+    "created_at": "2025-11-16T21:19:13.000Z",
+    "updated_at": "2025-11-16T22:35:25.000Z"
+  },
+  {
+    "id_participation": 1,
+    "id_trip": 1,
+    "id_user": 1,
+    "status": "accepted",
+    "message": "Esto es un mensaje",
+    "created_at": "2025-11-16T21:13:51.000Z",
+    "updated_at": "2025-11-16T21:13:51.000Z"
+  },
+  {
+    "id_participation": 2,
+    "id_trip": 1,
+    "id_user": 3,
+    "status": "pending",
+    "message": "Quiero ir pero no sé a dónde vamos.",
+    "created_at": "2025-11-16T21:13:51.000Z",
+    "updated_at": "2025-11-16T21:13:51.000Z"
+  },
+  {
+    "id_participation": 3,
+    "id_trip": 1,
+    "id_user": 4,
+    "status": "rejected",
+    "message": "Solicitud rechazada por motivos misteriosos.",
+    "created_at": "2025-11-16T21:13:51.000Z",
+    "updated_at": "2025-11-16T21:13:51.000Z"
+  }
+]
+
+Response:
+
+- Array con todas las solicitudes de ese viaje, independientemente del estado
+
+
+### 2.1 Ver solicitudes/participantes de un viaje por estado
+
+Method: GET  
+Url: /api/participants/trip/:trip_id?status={estado}  
+Headers: X  
+Body: X  
+
+Valores posibles de status:
+
+- pending
+- accepted
+- rejected
+- left
+
+Ejemplo:
+
+GET /api/participants/trip/1?status=accepted
+
+Ejemplo de respuesta:
+
+[
+  {
+    "id_participation": 10,
+    "id_trip": 1,
+    "id_user": 2,
+    "status": "accepted",
+    "message": "Solicitud pendiente extra del usuario 2 en el viaje 1.",
+    "created_at": "2025-11-16T21:19:13.000Z",
+    "updated_at": "2025-11-16T22:35:25.000Z"
+  },
+  {
+    "id_participation": 1,
+    "id_trip": 1,
+    "id_user": 1,
+    "status": "accepted",
+    "message": "Soy el creador pero también figuro como participante.",
+    "created_at": "2025-11-16T21:13:51.000Z",
+    "updated_at": "2025-11-16T21:13:51.000Z"
+  }
+]
+
+Response:
+
+- Array con las solicitudes de ese viaje filtradas por estado
+
+
+### 3. Ver todas las solicitudes que ha realizado un usuario (como solicitante)
+
+Method: GET  
+Url: /api/participants/my-requests  
+Headers: X  
+Body: X  
+
+Ejemplo de respuesta:
+
+[
+  {
+    "id_participation": 1,
+    "id_trip": 1,
+    "id_user": 1,
+    "status": "accepted",
+    "message": "Esto es un mensaje",
+    "created_at": "2025-11-16T21:13:51.000Z",
+    "updated_at": "2025-11-16T21:13:51.000Z"
+  },
+  {
+    "id_participation": 6,
+    "id_trip": 2,
+    "id_user": 1,
+    "status": "pending",
+    "message": "También quiero pasear por Lisboa inventada.",
+    "created_at": "2025-11-16T21:13:51.000Z",
+    "updated_at": "2025-11-16T21:13:51.000Z"
+  }
+]
+
+Response:
+
+- Array con todas las solicitudes que el usuario ha enviado a distintos viajes
+
+
+### 3.1 Ver solicitudes del usuario filtradas por estado
+
+Method: GET  
+Url: /api/participants/my-requests?status={estado}  
+Headers: X  
+Body: X  
+
+Ejemplo:
+
+GET /api/participants/my-requests?status=pending
+
+Ejemplo de respuesta:
+
+[
+  {
+    "id_participation": 10,
+    "id_trip": 1,
+    "id_user": 2,
+    "status": "pending",
+    "message": "Solicitud pendiente extra del usuario 2 en el viaje 1.",
+    "created_at": "2025-11-16T21:19:13.000Z",
+    "updated_at": "2025-11-16T22:35:25.000Z"
+  }
+]
+
+Response:
+
+- Array con las solicitudes del usuario filtradas por estado
+
+
+### 4. Ver todas las solicitudes que han recibido los viajes creados por el usuario (como creador)
+
+Method: GET  
+Url: /api/participants/my-creator-requests  
+Headers: X  
+Body: X  
+
+Response:
+
+- Array con todas las solicitudes que han llegado a los viajes creados por el usuario
+
+
+### 4.1 Ver solicitudes de mis viajes (creador) filtradas por estado
+
+Method: GET  
+Url: /api/participants/my-creator-requests?status={estado}  
+Headers: X  
+Body: X  
+
+Response:
+
+- Array con las solicitudes a los viajes creados por el usuario, filtradas por estado
+
+
+### 5. Crear una solicitud de participación para un viaje
+
+Method: POST  
+Url: /api/participants/:trip_id  
+Headers: Content-Type: application/json  
+Body:
+
+{
+  "message": "Quiero unirme al viaje."
+}
+
+Ejemplo de respuesta:
+
+{
+  "id_participation": 12,
+  "id_trip": 101,
+  "id_user": 1,
+  "status": "pending",
+  "message": "Quiero unirme al viaje.",
+  "created_at": "2025-11-17T18:26:28.000Z",
+  "updated_at": "2025-11-17T18:26:28.000Z"
+}
+
+Response:
+
+- Objeto con la nueva solicitud creada (estado inicial: pending)
+
+
+### 6. Cambiar el estado de una solicitud/participación
+
+Method: PATCH  
+Url: /api/participants/:participation_id  
+Headers: Content-Type: application/json  
+Body:
+
+{
+  "status": "accepted"
+}
+
+o
+
+{
+  "status": "rejected"
+}
+
+o
+
+{
+  "status": "left"
+}
+
+Ejemplo de respuesta:
+
+{
+  "id_participation": 12,
+  "id_trip": 101,
+  "id_user": 1,
+  "status": "accepted",
+  "message": "Quiero unirme al viaje.",
+  "created_at": "2025-11-17T18:26:28.000Z",
+  "updated_at": "2025-11-17T18:28:45.000Z"
+}
+
+Response:
+
+- Objeto con la solicitud actualizada (estado y updated_at modificados)
