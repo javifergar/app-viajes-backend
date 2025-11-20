@@ -35,18 +35,35 @@ const tripsById = async (tripId) => {
   return result[0];
 };
 
-const insertTrip = async ({ id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status }) => {
+const insertTrip = async ({
+  id_creator,
+  title,
+  description,
+  destination,
+  start_date,
+  end_date,
+  cost_per_person,
+  min_participants,
+  transport_info,
+  accommodation_info,
+  itinerary,
+  status,
+  departure,
+}) => {
   const [result] = await db.query(
     `insert into trips 
-    (id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status) 
-    values (?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status]
+    (id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status,departure) 
+    values (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure]
   );
 
   return result;
 };
 
-const updateTrip = async (tripId, { id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status }) => {
+const updateTrip = async (
+  tripId,
+  { id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure }
+) => {
   const [result] = await db.query(
     `update trips set
        id_creator = ?,
@@ -60,9 +77,10 @@ const updateTrip = async (tripId, { id_creator, title, description, destination,
        transport_info = ?,
        accommodation_info = ?,
        itinerary = ?,
-       status = ?
+       status = ?,
+       departure = ?
      where id_trip = ?`,
-    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, tripId]
+    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure, tripId]
   );
 
   return result;
