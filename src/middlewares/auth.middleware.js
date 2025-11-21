@@ -1,0 +1,25 @@
+const jwt = require('jsonwebtoken');
+const usersModel = require('../models/users.model.js');
+
+const checkToken = async (req, res, next) => {
+  const token = req.headers['authorization'];
+
+  if (!token) {
+    return res.status(403).json({ message: 'Debes incluir el header Authorization' });
+  }
+
+  let data;
+  try {
+    data = jwt.verify(token, process.env.SECRET_KEY);
+  } catch (error) {
+    return res.status(403).json({ message: 'Token incorecto' });
+  }
+  const user = await usersModel.selectById(data.userId);
+  if (!user) {
+    return res.status(403).json({ message: 'No existe usuario' });
+  }
+  req.user = user;
+  next();
+};
+
+module.exports = { checkToken };

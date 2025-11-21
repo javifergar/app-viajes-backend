@@ -27,8 +27,8 @@ const getParticipation = async (req, res) => {
  * GET /api/participants/trip/:trip_id
  * GET /api/participants/trip/:trip_id?status=pending
  * GET /api/participants/trip/:trip_id?status=accepted
- *  GET /api/participants/trip/:trip_id?status=rejected
- *  GET /api/participants/trip/:trip_id?status=left
+ * GET /api/participants/trip/:trip_id?status=rejected
+ * GET /api/participants/trip/:trip_id?status=left
  */
 const getParticipantsByTrip = async (req, res) => {
   try {
@@ -49,9 +49,8 @@ const getParticipantsByTrip = async (req, res) => {
  * GET /api/participants/my-requests
  * GET /api/participants/my-requests?status=pending
  * GET /api/participants/my-requests?status=accepted
- *  GET /api/participants/my-requests?status=rejected
- *  GET /api/participants/my-requests?status=left
- *
+ * GET /api/participants/my-requests?status=rejected
+ * GET /api/participants/my-requests?status=left
  */
 const getMyRequests = async (req, res) => {
   try {
@@ -78,7 +77,6 @@ const getMyRequests = async (req, res) => {
 const getMyCreatorRequests = async (req, res) => {
   try {
     const userId = req.user.id_user;
-
     const { status } = req.query;
 
     const requests = await ParticipantsModel.selectMyCreatorRequests(userId, status);
@@ -93,12 +91,11 @@ const getMyCreatorRequests = async (req, res) => {
 /**
  * 5. CREAR UNA SOLICITUD DE PARTICIPACIÓN PARA UN VIAJE
  * POST /api/participants/:trip_id
- *  { "message": "Quiero unirme al viaje" }
+ * { "message": "Quiero unirme al viaje" }
  */
 const createParticipation = async (req, res) => {
   try {
     const { trip_id } = req.params;
-
     const userId = req.user.id_user;
     const { message } = req.body;
 
@@ -109,7 +106,7 @@ const createParticipation = async (req, res) => {
       return res.status(404).json({ error: 'Trip not found' });
     }
 
-    //Verifica que el viaje está abierto/open
+    // Verifica que el viaje está abierto/open
     if (trip.status !== 'open') {
       return res.status(400).json({ error: 'Trip is not open for requests' });
     }
@@ -119,7 +116,7 @@ const createParticipation = async (req, res) => {
       return res.status(400).json({ error: 'You cant join your own trip' });
     }
 
-    // Verifica si ya hay registro en la tabla trip_participants (si ya existe solicitud previa)
+    // Verifica si ya hay registro para este viaje/usuario
     const existing = await ParticipantsModel.selectByTripAndUser(trip_id, userId);
 
     if (existing) {
@@ -128,8 +125,7 @@ const createParticipation = async (req, res) => {
       });
     }
 
-    // Insertar en la bbdd la solicitud de participacion
-
+    // Insertar en la bbdd la solicitud de participación
     const insertId = await ParticipantsModel.insertParticipation(trip_id, userId, message);
 
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
@@ -178,6 +174,16 @@ const updateParticipationStatus = async (req, res) => {
   }
 };
 
+// TESTING
+const getAllParticipations = async (req, res) => {
+  try {
+    const users = await ParticipantsModel.selectParticipations();
+    res.json(users);
+  } catch (error) {
+    return res.status(500).json({ error: 'Error al obtener todos los participantes.' });
+  }
+};
+
 module.exports = {
   getParticipation,
   getParticipantsByTrip,
@@ -185,4 +191,5 @@ module.exports = {
   getMyCreatorRequests,
   createParticipation,
   updateParticipationStatus,
+  getAllParticipations,
 };
