@@ -2,7 +2,8 @@ const TripModel = require('../models/trips.model');
 
 const getAllTrips = async (req, res) => {
   try {
-    const trips = await TripModel.selectTrips(req.query);
+    const { status, destination, departure, date, creator } = req.query;
+    const trips = await TripModel.selectTrips({ status, destination, departure, date, creator });
 
     res.json(trips);
   } catch (error) {
@@ -20,6 +21,35 @@ const getTripById = async (req, res) => {
     res.json(trip);
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener el viaje' });
+  }
+};
+
+const getMyTripsAsParticipant = async (req, res) => {
+  try {
+    const userId = req.user.id_user;
+
+    const trips = await TripModel.selectTrips({
+      participant: userId,
+    });
+
+    res.json(trips);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener tus viajes como participante' });
+  }
+};
+
+const getMyTrips = async (req, res) => {
+  try {
+    const userId = req.user.id_user;
+
+    const trips = await TripModel.selectTrips({
+      creatorId: userId,
+    });
+
+    res.json(trips);
+  } catch (error) {
+    console.error('Error en getMyCreatedTrips:', error);
+    res.status(500).json({ message: 'Error al obtener tus viajes creados' });
   }
 };
 
@@ -54,9 +84,7 @@ const updateTrip = async (req, res) => {
       return res.status(403).json({ message: 'No puedes modificar un viaje si no eres el creador' });
     }
 
-    const data = { ...req.body, id_creator: creatorId };
-
-    await TripModel.updateTrip(tripId, data);
+    await TripModel.updateTrip(tripId, req.body);
     const updatedTrip = await TripModel.tripsById(tripId);
 
     res.json({ message: 'Viaje modificado correctamente', viaje_anterior: trip, viaje_actualizado: updatedTrip });
@@ -72,7 +100,6 @@ const deleteTrip = async (req, res) => {
     const creatorId = req.user.id_user;
 
     const trip = await TripModel.tripsById(tripId);
-    await TripModel.deleteTrip(tripId);
 
     if (!trip) {
       return res.json({
@@ -83,6 +110,7 @@ const deleteTrip = async (req, res) => {
     if (trip.id_creator !== creatorId) {
       return res.status(403).json({ message: 'No puedes eliminar un viaje si no eres el creador' });
     }
+    await TripModel.deleteTrip(tripId);
 
     res.json({ message: 'Viaje borrado correctamente', trip });
   } catch (error) {
@@ -90,4 +118,4 @@ const deleteTrip = async (req, res) => {
   }
 };
 
-module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip };
+module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip, getMyTripsAsParticipant, getMyTrips };

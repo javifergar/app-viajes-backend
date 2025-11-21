@@ -1,71 +1,15 @@
 # app-viajes-backend
 
-## Usuarios
+## VIAJES
 
-## Recuperar todos los usuarios
-
-Method: GET
-Url: /api/usuarios
-Headers: X
-Body: X
-
-Response:
-
-- Array con todos los usuarios
-
-## Recuperar datos de un usuario
-
-Method: GET
-Url: /api/usuarios/:idUser
-Headers: X
-Body: X
-
-Response:
-
-- Array con todos los datos del usuario
-
-## Creación de un usuario
-
-Method: POST
-Url:/api/usuarios
-Headers: X
-Body: ...
-
-Response:
-
-- Los datos del nuevo usuario
-
-## Actualizar datos de un usuario
-
-Method: PATCH
-Url: /api/usuarios/:idUser
-Headers: X
-Body: ...
-
-Response:
-
-- Array con todos los datos del usuario
-
-### Borrar datos de usuarios
-
-Method: DELETE
-url: /api/usuarios/:idUser
-Headres : X
-Body: X
-Response: ...
-
-- Borra los datos del usuario
-
-## Viajes
-
-## Recuperar todos los viajes
+### Recuperar todos los viajes
 
 Method: GET
 Url: /api/trips
 Headers: X
 Body: X
 
-Ejemplo:
+Ejemplo: GET
 {
 "id_trip": 1,
 "id_creator": 1,
@@ -89,9 +33,9 @@ Response:
 
 - Array con todos los viajes
 
-  ## Filtros
+  # Filtros
 
-  ## Recuperar viajes por estado
+  # Recuperar viajes por estado
 
   Method: GET
   Url: /api/trips?status=estado
@@ -102,7 +46,22 @@ Response:
 
   - Array con todos los viajes con status = estado
 
-  ## Recuperar viajes por destino
+  Ejemplo:GET URL/api/trips?status=open
+
+  # Recuperar viajes por origen de salida
+
+  Method: GET
+  Url: /api/trips?departure=pais, provincia o ciudad
+  Headers: X
+  Body: X
+
+  Response:
+
+  - Array con todos los viajes con departure = pais, provincia o ciudad
+
+  Ejemplo:GET URL/api/trips?departure=Madrid
+
+  # Recuperar viajes por destino
 
   Method: GET
   Url: /api/trips?destination=pais, provincia o ciudad
@@ -113,7 +72,9 @@ Response:
 
   - Array con todos los viajes con destination = pais, provincia o ciudad
 
-  ## Recuperar viajes por fecha
+  Ejemplo:GET URL/api/trips?destination=Nueva%20Zelanda
+
+  # Recuperar viajes por fecha
 
   Method: GET
   Url: /api/trips?date=yyyy-mm-dd
@@ -124,7 +85,9 @@ Response:
 
   - Array con todos los viajes con start_date = yyyy-mm-dd
 
-  ## Recuperar viajes por organizador
+  Ejemplo:GET URL/api/trips?date=2026-01-15
+
+  # Recuperar viajes por organizador
 
   Method: GET
   Url: /api/trips?creator={nombre_creador}
@@ -136,18 +99,9 @@ Response:
   - Array con todos los viajes con creator = nombre_creador
   - Los espacios entre palabras deben sustituirse por %20 Ejemplo: Jose Antonio -> Jose%20Antonio
 
-  ## Recuperar viajes activos de un usuario
+  Ejemplo:GET URL/api/trips?creator=Alberto
 
-  Method: GET
-  Url: /api/trips?destination={destination}&participants={id_usuario}
-  Headers: X
-  Body: X
-
-  Response:
-
-  - Array con todos los viajes del usuario
-
-## Recuperar datos de un viaje
+### Recuperar datos de un viaje
 
 Method: GET
 Url: /api/trips/:id
@@ -158,18 +112,46 @@ Response:
 
 - Array con todos los datos del viaje
 
-## Creación de un viaje
+Ejemplo:GET URL/api/trips/1
+
+### Recuperar viajes creados por mi usuario
+
+Method: GET
+Url: /api/trips/me/created
+Headers: Authorization: {{TOKEN}}
+Body: X
+
+Response:
+
+- Array con todos los viajes creados por el usuario
+
+Ejemplo:GET URL/api/trips/me/created
+
+### Recuperar viajes activos de un usuario
+
+Method: GET
+Url: /api/trips/me/participant
+Headers: Authorization: {{TOKEN}}
+Body: X
+
+Response:
+
+- Array con todos los viajes en los que participa el usuario
+
+Ejemplo:GET URL/api/trips/me/participant
+
+### Creación de un viaje
 
 Method: POST
 Url:/api/trips
-Headers: X
+Headers: Authorization: {{TOKEN}}
 Body: id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status
 
 Response:
 
 - Los datos del nuevo viaje
 
-Ejemplo:
+Ejemplo: POST URL/api/trips
 
 {
 "id_creator": 2,
@@ -187,18 +169,18 @@ Ejemplo:
 "departure": "Madrid"
 }
 
-## Actualizar datos de un viaje
+### Actualizar datos de un viaje
 
 Method: PUT
 Url: /api/trips/:id
-Headers: X
+Headers: Authorization: {{TOKEN}}
 Body: id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, trip_id
 
 Response:
 
 - Array con todos los datos del viaje
 
-Ejemplo:
+Ejemplo: PUT URL/api/trips/25
 
 {
 "id_creator": 1,
@@ -220,22 +202,58 @@ Ejemplo:
 
 Method: DELETE
 url: /api/trips/:id
-Headres : X
+Headres : Authorization: {{TOKEN}}
 Body: X
 Response:
 
 - Borra los datos del viaje
+
+Ejemplo:DELETE URL/api/trips/26
+
+## USUARIOS
+
+### Registro usuarios
+
+Method: PUT
+url: /api/users/login
+Headres : X
+Body: { email, password}
+
+Response:
+
+- Mensaje de confirmacion y Token
+
+Ejemplo: PUT URL/api/users/register
+
+{
+"name": "Manuel Rojo",
+"email":"manulito@example.com",
+"password":"manuelito",
+"phone":"+34674267589",
+"photo_url":"https://example.com/photos/aoki.jpg",
+"bio":"Me gusta viajar en patinete",
+"interests":"Costa, islas",
+"average_rating":0.0,
+"rating_count":0
+}
 
 ### Login usuarios
 
 Method: POST
 url: /api/users/login
 Headres : X
-Body: { username, email, password}
+Body: { email, password}
 
 Response:
 
 - Mensaje de confirmacion y Token
+
+Ejemplo: POST URL/api/users/login
+
+{
+"email":"albertogarcia@example.com",
+"password":"albertogarcia"
+}
 
 ## Valoraciones
 
