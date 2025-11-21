@@ -19,7 +19,7 @@ const checkToken = async (req, res, next) => {
     return res.status(403).json({ message: 'No existe usuario' });
   }
   req.user = user;
-  return next();
+  next();
 };
 
 module.exports = { checkToken };

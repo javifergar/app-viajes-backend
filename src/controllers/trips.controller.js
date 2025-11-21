@@ -61,8 +61,9 @@ const createTrip = async (req, res) => {
 
     const { insertId } = await TripModel.insertTrip(data);
 
+    // Crear participación automática del creador del viaje
     const existing = await ParticipantsModel.selectByTripAndUser(insertId, creatorId);
-    if (existing) {
+    if (!existing) {
       await ParticipantsModel.insertParticipation(insertId, creatorId, 'Creator auto-join', 'accepted');
     }
 
@@ -70,6 +71,7 @@ const createTrip = async (req, res) => {
 
     res.json(trip);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error al crear el viaje' });
   }
 };
@@ -95,7 +97,6 @@ const updateTrip = async (req, res) => {
     const updatedTrip = await TripModel.tripsById(tripId);
 
     res.json({ message: 'Viaje modificado correctamente', viaje_anterior: trip, viaje_actualizado: updatedTrip });
-    // res.json({ message: 'Actualizando viaje...', trip, message: 'Viaje actualizado: ', updatedTrip });
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar el viaje' });
   }
@@ -117,6 +118,7 @@ const deleteTrip = async (req, res) => {
     if (trip.id_creator !== creatorId) {
       return res.status(403).json({ message: 'No puedes eliminar un viaje si no eres el creador' });
     }
+
     await TripModel.deleteTrip(tripId);
 
     res.json({ message: 'Viaje borrado correctamente', trip });
@@ -125,4 +127,12 @@ const deleteTrip = async (req, res) => {
   }
 };
 
-module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip, getMyTripsAsParticipant, getMyTrips };
+module.exports = {
+  getAllTrips,
+  getTripById,
+  createTrip,
+  updateTrip,
+  deleteTrip,
+  getMyTripsAsParticipant,
+  getMyTrips,
+};
