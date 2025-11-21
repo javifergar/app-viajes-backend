@@ -60,13 +60,9 @@ const insertTrip = async ({
   return result;
 };
 
-const updateTrip = async (
-  tripId,
-  { id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure }
-) => {
+const updateTrip = async (tripId, { title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure }) => {
   const [result] = await db.query(
-    `update trips set
-       id_creator = ?,
+    `update trips set       
        title = ?,
        description = ?,
        destination = ?,
@@ -80,7 +76,7 @@ const updateTrip = async (
        status = ?,
        departure = ?
      where id_trip = ?`,
-    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure, tripId]
+    [title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure, tripId]
   );
 
   return result;
