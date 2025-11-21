@@ -18,7 +18,7 @@ Ejemplo: GET
 "destination": "Islandia",
 "start_date": "2026-01-14T23:00:00.000Z",
 "end_date": "2026-01-21T23:00:00.000Z",
-"cost_per_person": "1200.00",
+"cost_per_person": 1200.00,
 "min_participants": 4,
 "transport_info": "Vuelo directo a Reikiavik, coche alquilado",
 "accommodation_info": "Cabañas rurales en el norte",

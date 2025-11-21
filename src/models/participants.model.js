@@ -33,7 +33,7 @@ const selectParticipantsByTrip = async (tripId, status) => {
   sql += ' ORDER BY created_at DESC';
 
   const [result] = await db.query(sql, values);
-  return result; 
+  return result;
 };
 
 // Solicitudes donde YO soy el SOLICITANTE ( con status opcional)
@@ -93,12 +93,12 @@ const selectByTripAndUser = async (tripId, userId) => {
 };
 
 //  Insertar/create una nueva participación/solicitud
-const insertParticipation = async (tripId, userId, message) => {
+const insertParticipation = async (tripId, userId, message, status = 'pending') => {
   const query = `
     INSERT INTO trip_participants (id_trip, id_user, message, status)
-    VALUES (?, ?, ?, 'pending')
+    VALUES (?, ?, ?, ?)
   `;
-  const values = [tripId, userId, message || null];
+  const values = [tripId, userId, message || null, status];
 
   const [result] = await db.query(query, values);
   return result.insertId;
@@ -121,10 +121,15 @@ const updateParticipationStatus = async (participationId, status) => {
   const values = [status, participationId];
 
   const [result] = await db.query(query, values);
-  return result.affectedRows; 
+  return result.affectedRows;
 };
 
-
+// TESTING
+const selectParticipations = async () => {
+  const [result] = await db.query('select * from trip_participants');
+  return result;
+};
+// TESTING
 
 module.exports = {
   selectParticipationById,
@@ -134,4 +139,5 @@ module.exports = {
   selectByTripAndUser,
   insertParticipation,
   updateParticipationStatus,
+  selectParticipations,
 };

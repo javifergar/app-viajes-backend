@@ -1,4 +1,5 @@
 const TripModel = require('../models/trips.model');
+const ParticipantsModel = require('../models/participants.model');
 
 const getAllTrips = async (req, res) => {
   try {
@@ -59,6 +60,12 @@ const createTrip = async (req, res) => {
     const data = { ...req.body, id_creator: creatorId };
 
     const { insertId } = await TripModel.insertTrip(data);
+
+    const existing = await ParticipantsModel.selectByTripAndUser(insertId, creatorId);
+    if (existing) {
+      await ParticipantsModel.insertParticipation(insertId, creatorId, 'Creator auto-join', 'accepted');
+    }
+
     const trip = await TripModel.tripsById(insertId);
 
     res.json(trip);
