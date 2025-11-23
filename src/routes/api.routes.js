@@ -5,6 +5,7 @@ const auth = require('./api/auth.routers');
 const users = require('./api/users.routes');
 const ratings = require('./api/ratings.routes');
 const participants = require('./api/participants.routes');
+const messages = require('./api/messages.routes');
 
 //Middlewares
 const { checkToken } = require('../middlewares/auth.middleware');
@@ -15,5 +16,6 @@ router.use('/auth', auth);
 router.use('/users', checkToken, users);
 router.use('/ratings', ratings);
 router.use('/participants', participants);
+router.use('/messages', messages);
 
 module.exports = router;
