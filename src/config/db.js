@@ -19,7 +19,7 @@ const pool = mysql.createPool({
     // Lee el contenido del archivo CA que descargaste
 
     //UTILIZAR MIENTRAS SE DESARROLLA
-    //ca: fs.readFileSync(process.env.SSL_CA_PATH),
+   // ca: fs.readFileSync(process.env.SSL_CA_PATH),
 
     //UTILIZAR CUANDO SE HAGA PUSH
     ca: process.env.SSL_CA,

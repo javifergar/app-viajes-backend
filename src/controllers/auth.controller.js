@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 
 
 const create = async (req, res) => {
+  const findEmail = await UsersModel.selectByEmail(req.body.email);
+  if (findEmail) return res.status(400).json({ error: 'El email ya está registrado!' });
   req.body.password = bcrypt.hashSync(req.body.password, 8);
   try {
     const insertId = await UsersModel.insertUser(req.body);
