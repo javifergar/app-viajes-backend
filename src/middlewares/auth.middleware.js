@@ -12,7 +12,7 @@ const checkToken = async (req, res, next) => {
   try {
     data = jwt.verify(token, process.env.SECRET_KEY);
   } catch (error) {
-    return res.status(403).json({ message: 'Token incorecto' });
+    return res.status(403).json({ message: 'Token incorrecto' });
   }
   const user = await usersModel.selectById(data.userId);
   if (!user) {
