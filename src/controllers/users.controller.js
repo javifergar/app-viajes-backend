@@ -20,7 +20,13 @@ const getById = async (req, res) => {
 };
 
 
-
+const getByEmail = async (req, res) => {
+  const { email } = req.params;
+  const user = await UsersModel.selectByEmail(email);
+  delete user.password; 
+  if (!user) return res.status(404).json({ message: 'Email incorrecto o no existe' });
+  res.json(user);
+};
 
 
 const update = async (req, res) => {
@@ -68,4 +74,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, remove, update, updateAllUser };
+module.exports = { getAll, getById, getByEmail, remove, update, updateAllUser };
