@@ -15,6 +15,7 @@ Ejemplo: GET
 "id_creator": 1,
 "title": "Aventura en Islandia",
 "description": "Exploración de glaciares, géiseres y auroras boreales",
+"departure": "Madrid",
 "destination": "Islandia",
 "start_date": "2026-01-14T23:00:00.000Z",
 "end_date": "2026-01-21T23:00:00.000Z",
@@ -154,7 +155,6 @@ Response:
 Ejemplo: POST URL/api/trips
 
 {
-"id_creator": 2,
 "title": "Trekking en Nueva Zelanda",
 "description": "Recorrido por los Alpes Neozelandeses y senderos míticos como el Tongariro Alpine Crossing.",
 "destination": "Nueva Zelanda",
@@ -183,7 +183,6 @@ Response:
 Ejemplo: PUT URL/api/trips/25
 
 {
-"id_creator": 1,
 "title": "Aventura en China",
 "description": "Exploración de glaciares, géiseres y auroras boreales",
 "destination": "China",
