@@ -1,7 +1,7 @@
 const TripsModel = require('../models/trips.model');
 
 const checkTripExists = async (req, res, next) => {
-  const tripId = req.params.tripId || req.params.trip_id;
+  const tripId = req.params.idTrip || req.body.id_trip;
 
   if (!tripId) {
     return res.status(400).json({ message: 'Falta el id del viaje' });

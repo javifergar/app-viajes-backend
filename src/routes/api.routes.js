@@ -14,8 +14,8 @@ const { checkToken } = require('../middlewares/auth.middleware');
 router.use('/trips', trips);
 router.use('/auth', auth);
 router.use('/users', checkToken, users);
-router.use('/ratings', ratings);
-router.use('/participants', participants);
-router.use('/messages', messages);
+router.use('/ratings', checkToken, ratings);
+router.use('/participants', checkToken, participants);
+router.use('/messages', checkToken, messages);
 
 module.exports = router;
