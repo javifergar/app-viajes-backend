@@ -22,7 +22,7 @@ const pool = mysql.createPool({
     //ca: fs.readFileSync(process.env.SSL_CA_PATH),
 
     //UTILIZAR CUANDO SE HAGA PUSH
-    ca: process.env.SSL_CA,
+   ca: process.env.SSL_CA,
   },
 
   waitForConnections: true,
