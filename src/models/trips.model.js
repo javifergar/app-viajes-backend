@@ -1,9 +1,15 @@
 const db = require('../config/db');
 
 const selectTrips = async (filters = {}) => {
-  let sql = 'select t.*, u.name as creator_name from trips t inner join users u on t.id_creator = u.id_user where 1=1';
+  let sql = `select t.*, u.name as creator_name, 
+    (select count(*) from trip_participants tp where tp.id_trip = t.id_trip and tp.status = 'accepted') 
+    as accepted_participants
+    from trips t
+    inner join users u ON t.id_creator = u.id_user
+    where 1=1
+  `;
   const params = [];
-  const { status, departure, destination, date, creator, participant, creatorId } = filters;
+  const { status, departure, destination, date, creator, participant, participantStatus, creatorId, excludeCreatorForParticipant } = filters;
   if (status) {
     sql += ' and t.status = ?';
     params.push(status);
@@ -25,8 +31,19 @@ const selectTrips = async (filters = {}) => {
     params.push(`%${creator}%`);
   }
   if (participant) {
-    sql += ` and exists (select 1 from trip_participants tp where tp.id_trip = t.id_trip and tp.id_user = ? and tp.status = 'accepted')`;
-    params.push(participant);
+    if (participantStatus) {
+      sql += `
+        and exists (select 1 from trip_participants tp where tp.id_trip = t.id_trip and tp.id_user = ? and tp.status = ?)`;
+      params.push(participant, participantStatus);
+    } else {
+      sql += `
+        and exists (select 1 from trip_participants tp where tp.id_trip = t.id_trip and tp.id_user = ?)`;
+      params.push(participant);
+    }
+    if (excludeCreatorForParticipant) {
+      sql += ' and t.id_creator <> ?';
+      params.push(participant);
+    }
   }
   if (creatorId) {
     sql += ' and t.id_creator = ?';
