@@ -11,23 +11,24 @@ Body: X
 
 Ejemplo: GET
 {
-"id_trip": 1,
-"id_creator": 1,
-"title": "Aventura en Islandia",
-"description": "Exploración de glaciares, géiseres y auroras boreales",
+"id_trip": 46,
+"id_creator": 18,
+"title": "Relax en Riviera Maya",
+"description": "Playas paradisíacas, cenotes y visita a Chichén Itzá.",
+"destination": "México",
 "departure": "Madrid",
-"destination": "Islandia",
-"start_date": "2026-01-14T23:00:00.000Z",
-"end_date": "2026-01-21T23:00:00.000Z",
-"cost_per_person": 1200.00,
-"min_participants": 4,
-"transport_info": "Vuelo directo a Reikiavik, coche alquilado",
-"accommodation_info": "Cabañas rurales en el norte",
-"itinerary": "Día 1: llegada, Día 2: excursiones, Día 3: termas",
+"start_date": "2026-08-02T22:00:00.000Z",
+"end_date": "2026-08-11T22:00:00.000Z",
+"cost_per_person": 1500,
+"min_participants": 6,
+"transport_info": "Vuelo a Cancún + transporte privado",
+"accommodation_info": "Resort todo incluido",
+"itinerary": "Día 2: Cenote Azul, Día 4: Tulum, Día 7: Chichén Itzá",
 "status": "open",
-"created_at": "2025-11-16T19:05:21.000Z",
-"updated_at": "2025-11-16T19:05:21.000Z",
-"creator_name": "Juan Marquez"
+"created_at": "2025-11-21T17:01:38.000Z",
+"updated_at": "2025-11-21T17:01:38.000Z",
+"creator_name": "Alberto García",
+"accepted_participants": 2
 }
 
 Response:
@@ -137,9 +138,31 @@ Body: X
 
 Response:
 
-- Array con todos los viajes en los que participa el usuario
+- Array con todos los viajes en los que ha enviado solicitud
 
-Ejemplo:GET URL/api/trips/me/participant
+  Ejemplo:GET URL/api/trips/me/participant
+
+  # Filtros
+
+  ### Solo los viajes donde estoy PENDING
+
+  GET {{URL}}/trips/me/participant?participantStatus=pending
+  Authorization: {{TOKEN}}
+
+  ### Solo ACCEPTED
+
+  GET {{URL}}/trips/me/participant?participantStatus=accepted
+  Authorization: {{TOKEN}}
+
+  ### Solo REJECTED
+
+  GET {{URL}}/trips/me/participant?participantStatus=rejected
+  Authorization: {{TOKEN}}
+
+  ### Solo LEFT
+
+  GET {{URL}}/trips/me/participant?participantStatus=left
+  Authorization: {{TOKEN}}
 
 ### Creación de un viaje
 

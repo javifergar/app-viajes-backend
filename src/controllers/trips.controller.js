@@ -28,9 +28,12 @@ const getTripById = async (req, res) => {
 const getMyTripsAsParticipant = async (req, res) => {
   try {
     const userId = req.user.id_user;
+    const participantStatus = req.query.participantStatus;
 
     const trips = await TripModel.selectTrips({
       participant: userId,
+      participantStatus,
+      excludeCreatorForParticipant: true,
     });
 
     res.json(trips);
