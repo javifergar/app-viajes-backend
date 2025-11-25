@@ -19,15 +19,13 @@ const getById = async (req, res) => {
   res.json(user);
 };
 
-
 const getByEmail = async (req, res) => {
   const { email } = req.params;
   const user = await UsersModel.selectByEmail(email);
-  delete user.password; 
+  delete user.password;
   if (!user) return res.status(404).json({ message: 'Email incorrecto o no existe' });
   res.json(user);
 };
-
 
 const update = async (req, res) => {
   try {
@@ -52,7 +50,7 @@ const updateAllUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const userData = req.body;
-    const affectedRows = await UsersModel.updateUser(userId, userData);
+    const affectedRows = await UsersModel.updateAllUser(userId, userData);
     if (affectedRows === 0) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
     const userModified = await UsersModel.selectById(userId);
     res.json(userModified);
