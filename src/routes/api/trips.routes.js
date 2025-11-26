@@ -1,11 +1,16 @@
-const { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip } = require('../../controllers/trips.controller');
+const { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip, getMyTripsAsParticipant, getMyTrips } = require('../../controllers/trips.controller');
+const { checkToken } = require('../../middlewares/auth.middleware');
+const { checkTripExists } = require('../../middlewares/tripValidation.middleware');
 
 const router = require('express').Router();
 
 router.get('/', getAllTrips);
-router.get('/:tripId', getTripById);
-router.post('/', createTrip);
-router.put('/:tripId', updateTrip);
-router.delete('/:tripId', deleteTrip);
+router.get('/me/created', checkToken, getMyTrips);
+router.get('/me/participant', checkToken, getMyTripsAsParticipant);
+router.get('/:tripId', checkTripExists, getTripById);
+
+router.post('/', checkToken, createTrip);
+router.put('/:tripId', checkToken, checkTripExists, updateTrip);
+router.delete('/:tripId', checkToken, checkTripExists, deleteTrip);
 
 module.exports = router;

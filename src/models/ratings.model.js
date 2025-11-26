@@ -6,10 +6,7 @@ const db = require('../config/db');
  * @returns {Promise<Array>} Lista de valoraciones del viaje.
  */
 const selectByTrip = async (idTrip) => {
-  const [rows] = await db.query(
-    `SELECT * FROM ratings WHERE id_trip = ? ORDER BY created_at DESC`,
-    [idTrip]
-  );
+  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_trip = ? ORDER BY created_at DESC`, [idTrip]);
   return rows;
 };
 
@@ -19,10 +16,7 @@ const selectByTrip = async (idTrip) => {
  * @returns {Promise<Array>} Lista de valoraciones recibidas.
  */
 const selectForUser = async (idUser) => {
-  const [rows] = await db.query(
-    `SELECT * FROM ratings WHERE id_reviewed = ? ORDER BY created_at DESC`,
-    [idUser]
-  );
+  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_reviewed = ? ORDER BY created_at DESC`, [idUser]);
   return rows;
 };
 
@@ -32,10 +26,7 @@ const selectForUser = async (idUser) => {
  * @returns {Promise<Object|null>} Valoración encontrada o null si no existe.
  */
 const selectById = async (idRating) => {
-  const [rows] = await db.query(
-    `SELECT * FROM ratings WHERE id_rating = ?`,
-    [idRating]
-  );
+  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_rating = ?`, [idRating]);
   return rows[0] || null;
 };
 
@@ -75,10 +66,7 @@ const updateRating = async (idRating, fields) => {
   });
   if (set.length === 0) return null;
   values.push(idRating);
-  const [result] = await db.query(
-    `UPDATE ratings SET ${set.join(', ')} WHERE id_rating = ?`,
-    values
-  );
+  const [result] = await db.query(`UPDATE ratings SET ${set.join(', ')} WHERE id_rating = ?`, values);
   return result.affectedRows;
 };
 
@@ -88,10 +76,7 @@ const updateRating = async (idRating, fields) => {
  * @returns {Promise<number>} Número de filas afectadas (0 si no existía).
  */
 const deleteRating = async (idRating) => {
-  const [result] = await db.query(
-    `DELETE FROM ratings WHERE id_rating = ?`,
-    [idRating]
-  );
+  const [result] = await db.query(`DELETE FROM ratings WHERE id_rating = ?`, [idRating]);
   return result.affectedRows === 1;
 };
 
@@ -111,6 +96,39 @@ const recalcUserAggregates = async (idUser) => {
   );
 };
 
+/**
+ * Comprueba si dos usuarios (reviewer y reviewed) pertenecen al mismo viaje.
+ * Pueden ser el creador del viaje o participantes aceptados.
+ */
+const checkUsersBelongToTrip = async (id_trip, id_reviewer, id_reviewed) => {
+  const [rows] = await db.query(
+    `
+    SELECT
+      SUM(CASE WHEN user_id = ? THEN 1 ELSE 0 END) AS reviewer_in_trip,
+      SUM(CASE WHEN user_id = ? THEN 1 ELSE 0 END) AS reviewed_in_trip
+    FROM (
+      -- CREADOR DEL VIAJE
+      SELECT t.id_creator AS user_id
+      FROM trips t
+      WHERE t.id_trip = ?
+
+      UNION ALL
+
+      -- PARTICIPANTES ACEPTADOS DEL VIAJE
+      SELECT tp.id_user AS user_id
+      FROM trip_participants tp
+      WHERE tp.id_trip = ?
+        AND tp.status = 'accepted'
+    ) AS users_in_trip
+    `,
+    [id_reviewer, id_reviewed, id_trip, id_trip]
+  );
+
+  if (!rows || !rows[0]) return false;
+
+  return rows[0].reviewer_in_trip > 0 && rows[0].reviewed_in_trip > 0;
+};
+
 module.exports = {
   selectByTrip,
   selectForUser,
@@ -119,4 +137,5 @@ module.exports = {
   updateRating,
   deleteRating,
   recalcUserAggregates,
+  checkUsersBelongToTrip,
 };
