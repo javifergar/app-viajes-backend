@@ -55,7 +55,15 @@ const selectTrips = async (filters = {}) => {
 };
 
 const tripsById = async (tripId) => {
-  const [result] = await db.query('select * from trips where id_trip = ?', [tripId]);
+  const [result] = await db.query(
+    `select t.*, u.name as creator_name, 
+    (select count(*) from trip_participants tp where tp.id_trip = t.id_trip and tp.status = 'accepted') 
+    as accepted_participants
+    from trips t
+    inner join users u ON t.id_creator = u.id_user
+    where id_trip = ?`,
+    [tripId]
+  );
   if (result.length === 0) return null;
   return result[0];
 };
