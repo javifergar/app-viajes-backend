@@ -606,3 +606,41 @@ Ejemplo de respuesta:
 Response:
 
 - Objeto con la solicitud actualizada (estado y updated_at modificados)
+
+### 7. Ver información de los usuarios aceptados de un viaje
+
+Method: GET  
+Url: /participants/trip-info/:trip_id
+Headers:
+Body:
+
+Response:
+
+- Devuelve la información de los usuarios de un viaje en el que han sido aceptados. Si no se envía token
+  solo devuelve el id_user, name, photo_url, bio, interests y average_rating. Si tiene token, a demás
+  añade el email y phone.
+
+Ejemplo: GET {{URL}}/participants/trip-info/60
+
+[
+{
+"id_user": 66,
+"name": "Pedro Antonio Antoñez",
+"photo_url": "https://example.com/photos/aoki.jpg",
+"bio": "No se leer",
+"interests": "Mi contraeña es: antoñito1",
+"average_rating": 0,
+"email": "antoñito1@example.com",
+"phone": "+34 600500551"
+},
+{
+"id_user": 59,
+"name": "Pedro Antonio",
+"photo_url": "https://example.com/photos/aoki.jpg",
+"bio": "No se leer",
+"interests": "Mi contraeña es: antoñito",
+"average_rating": 0,
+"email": "antoñito@example.com",
+"phone": "+34 600500551"
+}
+]
