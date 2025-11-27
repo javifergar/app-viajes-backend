@@ -28,22 +28,32 @@ const getByEmail = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  try {
-    // Extracción de parámetros (no usar await)
-    const { userId } = req.params;
-    const userData = req.body; // Datos a actualizar
-    // Llamada al modelo
-    const affectedRows = await UsersModel.updateUser(userId, userData);
-    // El usuario no fue encontrado o no se proporcionaron campos para actualizar
-    if (affectedRows === 0) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
-    // Devolvemos el recurso modificado
-    const userModified = await UsersModel.selectById(userId);
-
-    res.json(userModified);
-  } catch (error) {
-    console.error('Error al modificar el usuario:', error);
-    return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
-  }
+    try {
+        const { userId } = req.params;
+        const userData = req.body; 
+        if (userData.password) {
+            const user = await UsersModel.selectById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'Id de Usuario no existe' });
+            }
+            const isSame = await bcrypt.compare(userData.password, user.password);
+            if (isSame) {
+                return res.status(400).json({ message: 'Contraseña igual a la anterior' });
+            }
+            const salt = await bcrypt.genSalt(10);
+            userData.password = await bcrypt.hash(userData.password, salt);
+        }
+        const affectedRows = await UsersModel.updateUser(userId, userData);
+        if (affectedRows === 0) {
+            return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
+        }
+        const userModified = await UsersModel.selectById(userId);
+        delete userModified.password; 
+        res.json(userModified);
+    } catch (error) {
+        console.error('Error al modificar el usuario:', error);
+        return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
+    }
 };
 
 const updateAllUser = async (req, res) => {
