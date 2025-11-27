@@ -15,7 +15,7 @@ router.use('/trips', trips);
 router.use('/auth', auth);
 router.use('/users', checkToken, users);
 router.use('/ratings', checkToken, ratings);
-router.use('/participants', checkToken, participants);
+router.use('/participants', participants);
 router.use('/messages', checkToken, messages);
 
 module.exports = router;

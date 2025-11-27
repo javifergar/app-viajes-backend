@@ -1,5 +1,7 @@
 const ParticipantsModel = require('../models/participants.model');
 const TripsModel = require('../models/trips.model');
+const jwt = require('jsonwebtoken');
+const UsersModel = require('../models/users.model');
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -174,6 +176,52 @@ const updateParticipationStatus = async (req, res) => {
   }
 };
 
+/**
+ * 7. VER LA INFORMACION DE LOS PARTICIPANTES DEL VIAJE
+ *  GET /api/participants/:trip_id
+ */
+const getParticipantsInfo = async (req, res) => {
+  try {
+    const { trip_id } = req.params;
+
+    // usuario logueado (si hay token)
+    let loggedUser = null;
+
+    const authHeader = req.headers['authorization'];
+
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const data = jwt.verify(token, process.env.SECRET_KEY);
+
+        const user = await UsersModel.selectById(data.userId);
+        if (user) {
+          loggedUser = user;
+        }
+      } catch (error) {
+        // Token inválido/expirado → lo ignoramos y seguimos como público
+        loggedUser = null;
+      }
+    }
+
+    let includePrivate = false;
+
+    // Si hay usuario logueado, comprobamos si está ACCEPTED en ese viaje
+    if (loggedUser?.id_user) {
+      const participations = await ParticipantsModel.selectParticipantsByTrip(trip_id, 'accepted');
+
+      includePrivate = participations.some((p) => p.id_user === loggedUser.id_user);
+    }
+
+    const participantsInfo = await ParticipantsModel.selectParticipantsInfo(trip_id, includePrivate);
+
+    return res.json(participantsInfo);
+  } catch (error) {
+    console.error('Error in getParticipantsInfo:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // TESTING
 const getAllParticipations = async (req, res) => {
   try {
@@ -187,6 +235,7 @@ const getAllParticipations = async (req, res) => {
 module.exports = {
   getParticipation,
   getParticipantsByTrip,
+  getParticipantsInfo,
   getMyRequests,
   getMyCreatorRequests,
   createParticipation,
