@@ -14,7 +14,7 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
   const { userId } = req.params;
   const user = await UsersModel.selectById(userId);
-  delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada. Comento la linea hasta que averiguemos como modificar el usuario por completo de una manera segura
+  //delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada. Comento la linea hasta que averiguemos como modificar el usuario por completo de una manera segura
   if (!user) return res.status(404).json({ message: 'Id Usuario no existe' });
   res.json(user);
 };
@@ -22,7 +22,7 @@ const getById = async (req, res) => {
 const getByEmail = async (req, res) => {
   const { email } = req.params;
   const user = await UsersModel.selectByEmail(email);
-  delete user.password;
+ // delete user.password;
   if (!user) return res.status(404).json({ message: 'Email incorrecto o no existe' });
   res.json(user);
 };
