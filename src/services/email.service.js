@@ -11,15 +11,14 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 const sendVerifyEmailTo = async (userData) => {
   // Reseteamos el valor de verify_email de la BBDD
   //await db.query('UPDATE users SET verify_email = 0 WHERE id_user = ?', [userData.id_user]);
-
   // Generamos un JWT para identificar al usuario en la ruta de verificación
   const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY);
-  const verifyUrlBase = process.env.VERIFICATION_URL || 'http://localhost:3000/api/auth/verify';
-  const verificationLink = `${verifyUrlBase}?token=${token}`;
+  const UrlBase = process.env.BASE_URL || 'http://localhost:3000';
+  const verificationLink = `${UrlBase}/api/auth/verify?token=${token}`;
 
   await resend.emails.send({
       from: 'Viajes Compartidos <onboarding@resend.dev>',
-      to: 'david123ramirez@hotmail.com', //userData.email,
+      to: process.env.EMAIL_RESEND, //userData.email,
       subject: 'Verificación de email ',
       text: `Verifica tu correo haciendo clic en el siguiente enlace: ${verificationLink}`
   });
