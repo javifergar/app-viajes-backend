@@ -1,5 +1,7 @@
 const TripModel = require('../models/trips.model');
 const ParticipantsModel = require('../models/participants.model');
+const { hasDateChanged } = require('../utils/utils/date.utils');
+const { sendTripUpdateNotification } = require('../services/email.service');
 
 const getAllTrips = async (req, res) => {
   try {
@@ -79,96 +81,57 @@ const createTrip = async (req, res) => {
   }
 };
 
-// NOTIFICACIONES POR EMAIL AL MODIFICAR FECHAS DE VIAJE
-
-// 1. Configuración de Resend
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY); // Asegúrate de tener la KEY en tu .env
-
-// Función auxiliar para formatear fechas en el correo (ej: 25/12/2023)
-const formatDate = (dateString) => {
-  if (!dateString) return 'Por definir';
-  return new Date(dateString).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
 
 const updateTrip = async (req, res) => {
   try {
     const { tripId } = req.params;
     const creatorId = req.user.id_user;
+    const creatorEmail = req.user.email; // Asegúrate de que el middleware auth te da el email
 
-    // 1. Recuperamos el viaje ANTES de actualizar (Old Trip)
+    // 1. Validaciones iniciales
     const oldTrip = await TripModel.tripsById(tripId);
-
     if (!oldTrip) {
-      return res.json({ message: 'No existe este viaje' });
+      return res.status(404).json({ message: 'No existe este viaje' });
     }
-
     if (oldTrip.id_creator !== creatorId) {
       return res.status(403).json({ message: 'No puedes modificar un viaje si no eres el creador' });
     }
 
-    // 2. Actualizamos el viaje en la BBDD
+    // 2. Actualización en BBDD
     await TripModel.updateTrip(tripId, req.body);
-    
-    // 3. Recuperamos el viaje actualizado (New Trip)
     const updatedTrip = await TripModel.tripsById(tripId);
 
-    // --- LÓGICA DE NOTIFICACIONES ---
-
-    // Comparamos las fechas (convertimos a ISO string para evitar errores de objetos Date)
-    const oldStart = new Date(oldTrip.start_date).toISOString();
-    const newStart = new Date(updatedTrip.start_date).toISOString();
-    const oldEnd = new Date(oldTrip.end_date).toISOString();
-    const newEnd = new Date(updatedTrip.end_date).toISOString();
-
-    // Si cambió alguna de las fechas...
-    if (oldStart !== newStart || oldEnd !== newEnd) {
-        
-        // Obtenemos los participantes aceptados usando la nueva función del modelo
-        const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
-
-        if (participants.length > 0) {
-            // Preparamos los envíos (Promise.allSettled para que un error de email no rompa el flujo)
-            const emailPromises = participants.map(participant => {
-                // Opcional: No enviar correo al propio creador si está en la lista de participantes
-                if (participant.email === req.user.email) return Promise.resolve();
-
-                return resend.emails.send({
-                    from: 'Viajes Compartidos <onboarding@resend.dev>', // Usa tu remitente verificado en producción
-                    to: participant.email,
-                    subject: `⚠️ Cambio de fechas: ${updatedTrip.title}`,
-                    html: `
-                        <h2>¡Hola ${participant.name}!</h2>
-                        <p>Te informamos que las fechas del viaje <strong>"${updatedTrip.title}"</strong> han sido modificadas.</p>
-                        
-                        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                            <p style="margin: 5px 0;"><strong>📅 Nuevas fechas:</strong></p>
-                            <ul style="list-style: none; padding-left: 0;">
-                                <li>Salida: ${formatDate(updatedTrip.start_date)}</li>
-                                <li>Regreso: ${formatDate(updatedTrip.end_date)}</li>
-                            </ul>
-                            <hr style="border: 0; border-top: 1px solid #ccc;">
-                            <p style="font-size: 0.9em; color: #666;">(Anteriormente: ${formatDate(oldTrip.start_date)} - ${formatDate(oldTrip.end_date)})</p>
-                        </div>
-
-                        <p>Por favor, revisa la aplicación para más detalles.</p>
-                    `
-                });
-            });
-
-            // Ejecutamos el envío en "segundo plano" (no esperamos con await bloqueante estricto si no queremos retrasar la respuesta HTTP)
-            Promise.allSettled(emailPromises).then(results => {
-                console.log(`Notificaciones enviadas: ${results.length} intentos.`);
-            });
-        }
+    // 3. Lógica de Notificación (Desacoplada)
+    if (hasDateChanged(oldTrip, updatedTrip)) {
+        // Ejecutamos en "background" sin await para no bloquear la respuesta al usuario
+        notifyParticipantsOfChanges(tripId, oldTrip, updatedTrip, creatorEmail);
     }
-    // --------------------------------
 
-    res.json({ message: 'Viaje modificado correctamente', viaje_anterior: oldTrip, viaje_actualizado: updatedTrip });
+    // 4. Respuesta inmediata
+    res.json({ 
+        message: 'Viaje modificado correctamente', 
+        viaje_anterior: oldTrip, 
+        viaje_actualizado: updatedTrip 
+    });
+
   } catch (error) {
-    console.error(error); 
+    console.error('Error en updateTrip:', error); 
     res.status(500).json({ message: 'Error al actualizar el viaje' });
   }
+};
+
+
+// para manejar la obtención de datos necesarios para el email
+const notifyParticipantsOfChanges = async (tripId, oldTrip, updatedTrip, creatorEmail) => {
+    try {
+        const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
+        if (participants.length > 0) {
+            const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
+            console.log(`Notificaciones procesadas. Total: ${results.length}`);
+        }
+    } catch (error) {
+        console.error('Error enviando notificaciones en segundo plano:', error);
+    }
 };
 
 const deleteTrip = async (req, res) => {
