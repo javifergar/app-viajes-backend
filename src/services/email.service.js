@@ -1,9 +1,29 @@
 
 const { Resend } = require('resend');
 const { formatDate } = require('../utils/utils/date.utils'); 
+const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 
 // Inicializar solo si existe la key, buena práctica para evitar crash en dev
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+//Envio de un correo electrónico de verificación agnóstico a creación o modificación
+const sendVerifyEmailTo = async (userData) => {
+  // Reseteamos el valor de verify_email de la BBDD
+  //await db.query('UPDATE users SET verify_email = 0 WHERE id_user = ?', [userData.id_user]);
+
+  // Generamos un JWT para identificar al usuario en la ruta de verificación
+  const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY);
+  const verifyUrlBase = process.env.VERIFICATION_URL || 'http://localhost:3000/api/auth/verify';
+  const verificationLink = `${verifyUrlBase}?token=${token}`;
+
+  await resend.emails.send({
+      from: 'Viajes Compartidos <onboarding@resend.dev>',
+      to: 'david123ramirez@hotmail.com', //userData.email,
+      subject: 'Verificación de email ',
+      text: `Verifica tu correo haciendo clic en el siguiente enlace: ${verificationLink}`
+  });
+};
 
 // Plantilla HTML privada (no se exporta)
 const generateDateChangeTemplate = (participantName, tripTitle, oldTrip, newTrip) => {
@@ -35,7 +55,7 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
       from: 'Viajes Compartidos <onboarding@resend.dev>',
       to: participant.email,
       subject: `⚠️ Cambio de fechas: ${updatedTrip.title}`,
-      html: generateDateChangeTemplate(participant.name, updatedTrip.title, oldTrip, updatedTrip)
+      text: generateDateChangeTemplate(participant.name, updatedTrip.title, oldTrip, updatedTrip)
     });
   });
 
@@ -43,4 +63,4 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
   return Promise.allSettled(emailPromises);
 };
 
-module.exports = { sendTripUpdateNotification };
+module.exports = { sendTripUpdateNotification, sendVerifyEmailTo };

@@ -1,5 +1,3 @@
-// db.js
-
 // 1. Importar librerías
 const mysql = require('mysql2/promise'); // Usamos la API de 'promise' para Async/Await
 const fs = require('fs'); // Necesario para leer el certificado SSL
@@ -20,10 +18,10 @@ const pool = mysql.createPool({
     // Lee el contenido del archivo CA que descargaste
 
     //UTILIZAR MIENTRAS SE DESARROLLA
-    //ca: fs.readFileSync(process.env.SSL_CA_PATH),
+    ca: fs.readFileSync(process.env.SSL_CA_PATH),
 
     //UTILIZAR CUANDO SE HAGA PUSH
-    ca: process.env.SSL_CA,
+    //ca: process.env.SSL_CA,
   },
 
   waitForConnections: true,

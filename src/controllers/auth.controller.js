@@ -2,15 +2,19 @@
 const UsersModel = require('../models/users.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {sendVerifyEmailTo} = require('../services/email.service');
 
 
 const create = async (req, res) => {
   const findEmail = await UsersModel.selectByEmail(req.body.email);
   if (findEmail) return res.status(400).json({ error: 'El email ya está registrado!' });
   req.body.password = bcrypt.hashSync(req.body.password, 8);
+
   try {
     const insertId = await UsersModel.insertUser(req.body);
     const newUser = await UsersModel.selectById(insertId);
+    //Se envía en la creación el correo de verificación
+    await sendVerifyEmailTo(newUser);
     res.json(newUser);
   } catch (error) {
     console.error(error);
@@ -33,6 +37,12 @@ const login = async (req, res) => {
   });
 };
 
+const verify = () => {
+  console.log('LLegue al verify');
+  res.json({
+    message:'Hola mundo'
+  })
+};
 
 
-module.exports = { login, create };
+module.exports = { login, create, verify };
