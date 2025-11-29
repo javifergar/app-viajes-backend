@@ -13,13 +13,14 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   decimalNumbers: true, // ESTO hace que se resuelva lo de los decimales, pero puede perder precision....
+  dateStrings: true, // Evita desfase horario devolviendo fechas/datetime como texto literal
 
   // ** CONFIGURACIÓN SSL CRÍTICA PARA AIVEN **
   ssl: {
     // Lee el contenido del archivo CA que descargaste
 
     //UTILIZAR MIENTRAS SE DESARROLLA
-    // ca: fs.readFileSync(process.env.SSL_CA_PATH),
+    //ca: fs.readFileSync(process.env.SSL_CA_PATH),
 
     //UTILIZAR CUANDO SE HAGA PUSH
     ca: process.env.SSL_CA,
