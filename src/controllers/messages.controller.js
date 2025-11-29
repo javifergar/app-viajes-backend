@@ -7,9 +7,9 @@ const MessagesModel = require('../models/messages.model');
  */
 const getMessagesByTrip = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
 
-    const messages = await MessagesModel.selectMessagesByTrip(trip_id);
+    const messages = await MessagesModel.selectMessagesByTrip(tripId);
 
     return res.json(messages);
   } catch (error) {
@@ -24,13 +24,13 @@ const getMessagesByTrip = async (req, res) => {
  */
 const getMessagesTreeByTrip = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
 
     const map = new Map();
     const three = [];
 
 
-    const messages = await MessagesModel.selectMessagesByTrip(trip_id);
+    const messages = await MessagesModel.selectMessagesByTrip(tripId);
 
     // nodos base
     messages.forEach((msg) => {
@@ -65,9 +65,9 @@ const getMessagesTreeByTrip = async (req, res) => {
  */
 const getMessageById = async (req, res) => {
   try {
-    const { message_id } = req.params;
+    const { messageId } = req.params;
 
-    const message = await MessagesModel.selectMessageById(message_id);
+    const message = await MessagesModel.selectMessageById(messageId);
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
     }
@@ -90,7 +90,7 @@ const getMessageById = async (req, res) => {
 const createMessage = async (req, res) => {
   try {
     const userId = req.user.id_user;
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
     const { content, parent_message_id } = req.body;
 
     if (!content || content.trim() === '') {
@@ -99,7 +99,7 @@ const createMessage = async (req, res) => {
 
 
     const insertId = await MessagesModel.insertMessage({
-      id_trip: trip_id,
+      id_trip: tripId,
       id_author: userId,
       id_parent_message: parent_message_id || null,
       content,
@@ -123,24 +123,24 @@ const createMessage = async (req, res) => {
  */
 const updateMessage = async (req, res) => {
   try {
-    const { message_id } = req.params;
+    const { messageId } = req.params;
     const { content } = req.body;
 
     if (!content || content.trim() === '') {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const existing = await MessagesModel.selectMessageById(message_id);
+    const existing = await MessagesModel.selectMessageById(messageId);
     if (!existing) {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    const affectedRows = await MessagesModel.updateMessageContent(message_id, content);
+    const affectedRows = await MessagesModel.updateMessageContent(messageId, content);
     if (affectedRows === 0) {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    const updated = await MessagesModel.selectMessageById(message_id);
+    const updated = await MessagesModel.selectMessageById(messageId);
     return res.json(updated);
   } catch (error) {
     console.error('Error in updateMessage:', error);
@@ -157,19 +157,19 @@ const updateMessage = async (req, res) => {
  */
 const deleteMessage = async (req, res) => {
   try {
-    const { message_id } = req.params;
+    const { messageId } = req.params;
 
-    const existing = await MessagesModel.selectMessageById(message_id);
+    const existing = await MessagesModel.selectMessageById(messageId);
     if (!existing) {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    const children = await MessagesModel.hasChildren(message_id);
+    const children = await MessagesModel.hasChildren(messageId);
 
     if (children) {
       // Borrado lógico
-      await MessagesModel.softDeleteMessage(message_id);
-      const updated = await MessagesModel.selectMessageById(message_id);
+      await MessagesModel.softDeleteMessage(messageId);
+      const updated = await MessagesModel.selectMessageById(messageId);
 
       return res.json({
         deleteType: 'soft',
@@ -177,7 +177,7 @@ const deleteMessage = async (req, res) => {
       });
     } else {
       // Borrado físico
-      await MessagesModel.deleteMessageHard(message_id);
+      await MessagesModel.deleteMessageHard(messageId);
 
       return res.json({
         deleteType: 'hard',

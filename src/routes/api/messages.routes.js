@@ -3,11 +3,11 @@ const router = require('express').Router();
 const messages = require('../../controllers/messages.controller');
 const { checkToken } = require('../../middlewares/auth.middleware');
 
-router.get('/trip/:trip_id', messages.getMessagesByTrip);
-router.get('/trip/:trip_id/tree', messages.getMessagesTreeByTrip);
-router.get('/:message_id', messages.getMessageById);
-router.post('/trip/:trip_id', messages.createMessage);
-router.patch('/:message_id', messages.updateMessage);
-router.delete('/:message_id', messages.deleteMessage);
+router.get('/trip/:tripId', messages.getMessagesByTrip);
+router.get('/trip/:tripId/tree', messages.getMessagesTreeByTrip);
+router.get('/:messageId', messages.getMessageById);
+router.post('/trip/:tripId', messages.createMessage);
+router.patch('/:messageId', messages.updateMessage);
+router.delete('/:messageId', messages.deleteMessage);
 
 module.exports = router;
