@@ -14,15 +14,15 @@ const pool = mysql.createPool({
   dateStrings: true, // Evita desfase horario devolviendo fechas/datetime como texto literal
 
   // ** CONFIGURACIÓN SSL CRÍTICA PARA AIVEN **
-  ssl: {
-    // Lee el contenido del archivo CA que descargaste
+  // ssl: {
+  //   //   // Lee el contenido del archivo CA que descargaste
 
-    //UTILIZAR MIENTRAS SE DESARROLLA
-    //ca: fs.readFileSync(process.env.SSL_CA_PATH),
+  //   //   //UTILIZAR MIENTRAS SE DESARROLLA
+  //   //ca: fs.readFileSync(process.env.SSL_CA_PATH),
 
-    //UTILIZAR CUANDO SE HAGA PUSH
-    ca: process.env.SSL_CA,
-  },
+  //   //   //UTILIZAR CUANDO SE HAGA PUSH
+  //   //ca: process.env.SSL_CA,
+  // },
 
   waitForConnections: true,
   connectionLimit: 10,

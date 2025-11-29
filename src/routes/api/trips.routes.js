@@ -1,13 +1,13 @@
-const trips = require('../../controllers/trips.controller'); 
+const trips = require('../../controllers/trips.controller');
 const { checkToken } = require('../../middlewares/auth.middleware');
 const { checkTripExists } = require('../../middlewares/tripValidation.middleware');
 
 const router = require('express').Router();
 
-router.get('/', trips.getMyTrips);
+router.get('/', trips.getAllTrips);
 router.get('/me/created', checkToken, trips.getMyTrips);
 router.get('/me/participant', checkToken, trips.getMyTripsAsParticipant);
-router.get('/:tripId', checkTripExists,trips.getTripById);
+router.get('/:tripId', checkTripExists, trips.getTripById);
 
 router.post('/', checkToken, trips.createTrip);
 router.put('/:tripId', checkToken, checkTripExists, trips.updateTrip);
