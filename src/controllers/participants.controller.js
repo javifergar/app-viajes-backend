@@ -9,9 +9,9 @@ const UsersModel = require('../models/users.model');
  */
 const getParticipation = async (req, res) => {
   try {
-    const { participation_id } = req.params;
+    const { participationId } = req.params;
 
-    const participation = await ParticipantsModel.selectParticipationById(participation_id);
+    const participation = await ParticipantsModel.selectParticipationById(participationId);
 
     if (!participation) {
       return res.status(404).json({ message: 'Participation not found' });
@@ -34,10 +34,10 @@ const getParticipation = async (req, res) => {
  */
 const getParticipantsByTrip = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
     const { status } = req.query;
 
-    const participants = await ParticipantsModel.selectParticipantsByTrip(trip_id, status);
+    const participants = await ParticipantsModel.selectParticipantsByTrip(tripId, status);
 
     res.json(participants);
   } catch (error) {
@@ -97,12 +97,12 @@ const getMyCreatorRequests = async (req, res) => {
  */
 const createParticipation = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
     const userId = req.user.id_user;
     const { message } = req.body;
 
     // Verifica que el viaje existe
-    const trip = await TripsModel.tripsById(trip_id);
+    const trip = await TripsModel.tripsById(tripId);
 
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
@@ -119,7 +119,7 @@ const createParticipation = async (req, res) => {
     }
 
     // Verifica si ya hay registro para este viaje/usuario
-    const existing = await ParticipantsModel.selectByTripAndUser(trip_id, userId);
+    const existing = await ParticipantsModel.selectByTripAndUser(tripId, userId);
 
     if (existing) {
       return res.status(400).json({
@@ -128,7 +128,7 @@ const createParticipation = async (req, res) => {
     }
 
     // Insertar en la bbdd la solicitud de participación
-    const insertId = await ParticipantsModel.insertParticipation(trip_id, userId, message);
+    const insertId = await ParticipantsModel.insertParticipation(tripId, userId, message);
 
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
 
@@ -149,20 +149,20 @@ const createParticipation = async (req, res) => {
  */
 const updateParticipationStatus = async (req, res) => {
   try {
-    const { participation_id } = req.params;
+    const { participationId } = req.params;
     const { status } = req.body;
 
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    const affectedRows = await ParticipantsModel.updateParticipationStatus(participation_id, status);
+    const affectedRows = await ParticipantsModel.updateParticipationStatus(participationId, status);
 
     if (affectedRows === 0) {
       return res.status(404).json({ message: 'Participation not found' });
     }
 
-    const updatedParticipation = await ParticipantsModel.selectParticipationById(participation_id);
+    const updatedParticipation = await ParticipantsModel.selectParticipationById(participationId);
 
     return res.status(200).json(updatedParticipation);
   } catch (error) {
@@ -182,7 +182,7 @@ const updateParticipationStatus = async (req, res) => {
  */
 const getParticipantsInfo = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
 
     // usuario logueado (si hay token)
     let loggedUser = null;
@@ -208,12 +208,12 @@ const getParticipantsInfo = async (req, res) => {
 
     // Si hay usuario logueado, comprobamos si está ACCEPTED en ese viaje
     if (loggedUser?.id_user) {
-      const participations = await ParticipantsModel.selectParticipantsByTrip(trip_id, 'accepted');
+      const participations = await ParticipantsModel.selectParticipantsByTrip(tripId, 'accepted');
 
       includePrivate = participations.some((p) => p.id_user === loggedUser.id_user);
     }
 
-    const participantsInfo = await ParticipantsModel.selectParticipantsInfo(trip_id, includePrivate);
+    const participantsInfo = await ParticipantsModel.selectParticipantsInfo(tripId, includePrivate);
 
     return res.json(participantsInfo);
   } catch (error) {
