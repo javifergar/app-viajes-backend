@@ -188,6 +188,7 @@ Ejemplo: POST URL/api/trips
 "transport_info": "Vuelo a Auckland y campervan",
 "accommodation_info": "Campings y lodges de montaña",
 "itinerary": "Día 1: Auckland, Día 5: Rotorua, Día 10: Tongariro",
+"image_url": "https://example.com/photos/aoki.jpg",
 "status": "open",
 "departure": "Madrid"
 }
@@ -216,6 +217,7 @@ Ejemplo: PUT URL/api/trips/25
 "transport_info": "Vuelo directo a China, coche alquilado",
 "accommodation_info": "Cabañas rurales en el norte",
 "itinerary": "Día 1: llegada, Día 2: excursiones, Día 3: termas",
+"image_url": "https://example.com/photos/aoki.jpg",
 "status": "open",
 "departure":"Madrid"
 }
