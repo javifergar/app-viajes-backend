@@ -80,20 +80,24 @@ const insertTrip = async ({
   transport_info,
   accommodation_info,
   itinerary,
+  image_url,
   status,
   departure,
 }) => {
   const [result] = await db.query(
     `insert into trips 
-    (id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status,departure) 
-    values (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure]
+    (id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary,image_url, status,departure) 
+    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id_creator, title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, image_url, status, departure]
   );
 
   return result;
 };
 
-const updateTrip = async (tripId, { title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure }) => {
+const updateTrip = async (
+  tripId,
+  { title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, image_url, status, departure }
+) => {
   const [result] = await db.query(
     `update trips set       
        title = ?,
@@ -106,10 +110,11 @@ const updateTrip = async (tripId, { title, description, destination, start_date,
        transport_info = ?,
        accommodation_info = ?,
        itinerary = ?,
+       image_url = ?,
        status = ?,
        departure = ?
      where id_trip = ?`,
-    [title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, status, departure, tripId]
+    [title, description, destination, start_date, end_date, cost_per_person, min_participants, transport_info, accommodation_info, itinerary, image_url, status, departure, tripId]
   );
 
   return result;
