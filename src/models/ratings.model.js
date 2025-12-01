@@ -2,32 +2,32 @@ const db = require('../config/db');
 
 /**
  * Obtiene todas las valoraciones de un viaje ordenadas por fecha descendente.
- * @param {number} idTrip - Identificador del viaje (`ratings.id_trip`).
+ * @param {number} tripId - Identificador del viaje (`ratings.id_trip`) en BBDD.
  * @returns {Promise<Array>} Lista de valoraciones del viaje.
  */
-const selectByTrip = async (idTrip) => {
-  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_trip = ? ORDER BY created_at DESC`, [idTrip]);
-  return rows;
+const selectByTrip = async (tripId) => {
+  const [result] = await db.query(`SELECT * FROM ratings WHERE id_trip = ? ORDER BY created_at DESC`, [tripId]);
+  return result;
 };
 
 /**
  * Obtiene todas las valoraciones recibidas por un usuario ordenadas por fecha descendente.
- * @param {number} idUser - Identificador del usuario valorado (`ratings.id_reviewed`).
+ * @param {number} userId - Identificador del usuario valorado (`ratings.id_reviewed`).
  * @returns {Promise<Array>} Lista de valoraciones recibidas.
  */
-const selectForUser = async (idUser) => {
-  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_reviewed = ? ORDER BY created_at DESC`, [idUser]);
+const selectForUser = async (userId) => {
+  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_reviewed = ? ORDER BY created_at DESC`, [userId]);
   return rows;
 };
 
 /**
  * Recupera una valoración concreta por su id.
- * @param {number} idRating - Identificador de la valoración (`ratings.id_rating`).
+ * @param {number} ratingId - Identificador de la valoración (`ratings.id_rating`).
  * @returns {Promise<Object|null>} Valoración encontrada o null si no existe.
  */
-const selectById = async (idRating) => {
-  const [rows] = await db.query(`SELECT * FROM ratings WHERE id_rating = ?`, [idRating]);
-  return rows[0] || null;
+const selectById = async (ratingId) => {
+  const [result] = await db.query(`SELECT * FROM ratings WHERE id_rating = ?`, [ratingId]);
+  return result[0] || null;
 };
 
 /**
@@ -51,11 +51,11 @@ const insertRating = async ({ id_trip, id_reviewer, id_reviewed, score, comment 
 
 /**
  * Actualiza campos permitidos de una valoración.
- * @param {number} idRating - ID de la valoración a actualizar.
+ * @param {number} ratingId - ID de la valoración a actualizar.
  * @param {Object} fields - Campos a modificar (score y/o comment).
  * @returns {Promise<number>} Número de filas afectadas (0 si no se actualiza nada).
  */
-const updateRating = async (idRating, fields) => {
+const updateRating = async (ratingId, fields) => {
   const set = [];
   const values = [];
   ['score', 'comment'].forEach((key) => {
@@ -65,36 +65,21 @@ const updateRating = async (idRating, fields) => {
     }
   });
   if (set.length === 0) return null;
-  values.push(idRating);
+  values.push(ratingId);
   const [result] = await db.query(`UPDATE ratings SET ${set.join(', ')} WHERE id_rating = ?`, values);
   return result.affectedRows;
 };
 
 /**
  * Elimina una valoración por su ID.
- * @param {number} idRating - Identificador de la valoración a borrar.
+ * @param {number} ratingId - Identificador de la valoración a borrar.
  * @returns {Promise<number>} Número de filas afectadas (0 si no existía).
  */
-const deleteRating = async (idRating) => {
-  const [result] = await db.query(`DELETE FROM ratings WHERE id_rating = ?`, [idRating]);
+const deleteRating = async (ratingId) => {
+  const [result] = await db.query(`DELETE FROM ratings WHERE id_rating = ?`, [ratingId]);
   return result.affectedRows === 1;
 };
 
-/**
- * Recalcula la media y el contador de valoraciones de un usuario valorado.
- * @param {number} idUser - Identificador del usuario (`users.id_user`).
- * @returns {Promise<void>}
- */
-const recalcUserAggregates = async (idUser) => {
-  await db.query(
-    `UPDATE users u
-     SET 
-       average_rating = COALESCE((SELECT AVG(score) FROM ratings r WHERE r.id_reviewed = u.id_user), 0),
-       rating_count = (SELECT COUNT(*) FROM ratings r WHERE r.id_reviewed = u.id_user)
-     WHERE u.id_user = ?`,
-    [idUser]
-  );
-};
 
 /**
  * Comprueba si dos usuarios (reviewer y reviewed) pertenecen al mismo viaje.
@@ -136,6 +121,5 @@ module.exports = {
   insertRating,
   updateRating,
   deleteRating,
-  recalcUserAggregates,
   checkUsersBelongToTrip,
 };

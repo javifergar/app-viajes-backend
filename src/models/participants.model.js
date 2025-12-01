@@ -124,6 +124,49 @@ const updateParticipationStatus = async (participationId, status) => {
   return result.affectedRows;
 };
 
+// Obtener información de los participantes aceptados de un viaje
+const selectParticipantsInfo = async (tripId, includePrivate = false) => {
+  const sqlBase = `
+      SELECT 
+      u.id_user, 
+      u.name,     
+      u.photo_url, 
+      u.bio, 
+      u.interests, 
+      u.average_rating
+    `;
+
+  const sqlPrivate = `,
+      u.email,
+      u.phone
+    `;
+
+  const sqlFinal = `
+      FROM trip_participants tp
+      JOIN users u ON u.id_user = tp.id_user
+      WHERE tp.id_trip = ?
+      AND tp.status = 'accepted'
+      ORDER BY tp.created_at DESC
+    `;
+
+  const sql = includePrivate ? sqlBase + sqlPrivate + sqlFinal : sqlBase + sqlFinal;
+
+  const [result] = await db.query(sql, [tripId]);
+  return result;
+};
+
+// Obtener emails de participantes aceptados para notificaciones por email
+const selectAcceptedParticipantsEmails = async (tripId) => {
+  const query = `
+    SELECT u.email, u.name 
+    FROM trip_participants tp
+    JOIN users u ON tp.id_user = u.id_user
+    WHERE tp.id_trip = ? AND tp.status = 'accepted'
+  `;
+  const [result] = await db.query(query, [tripId]);
+  return result;
+};
+
 // TESTING
 const selectParticipations = async () => {
   const [result] = await db.query('select * from trip_participants');
@@ -140,4 +183,6 @@ module.exports = {
   insertParticipation,
   updateParticipationStatus,
   selectParticipations,
+  selectParticipantsInfo,
+  selectAcceptedParticipantsEmails,
 };

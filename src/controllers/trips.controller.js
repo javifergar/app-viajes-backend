@@ -1,5 +1,7 @@
 const TripModel = require('../models/trips.model');
 const ParticipantsModel = require('../models/participants.model');
+const { hasDateChanged } = require('../utils/utils/date.utils');
+const { sendTripUpdateNotification } = require('../services/email.service');
 
 const getAllTrips = async (req, res) => {
   try {
@@ -79,30 +81,57 @@ const createTrip = async (req, res) => {
   }
 };
 
+
 const updateTrip = async (req, res) => {
   try {
     const { tripId } = req.params;
     const creatorId = req.user.id_user;
+    const creatorEmail = req.user.email; // Asegúrate de que el middleware auth te da el email
 
-    const trip = await TripModel.tripsById(tripId);
-
-    if (!trip) {
-      return res.json({
-        message: 'No existe este viaje',
-      });
+    // 1. Validaciones iniciales
+    const oldTrip = await TripModel.tripsById(tripId);
+    if (!oldTrip) {
+      return res.status(404).json({ message: 'No existe este viaje' });
     }
-
-    if (trip.id_creator !== creatorId) {
+    if (oldTrip.id_creator !== creatorId) {
       return res.status(403).json({ message: 'No puedes modificar un viaje si no eres el creador' });
     }
 
+    // 2. Actualización en BBDD
     await TripModel.updateTrip(tripId, req.body);
     const updatedTrip = await TripModel.tripsById(tripId);
 
-    res.json({ message: 'Viaje modificado correctamente', viaje_anterior: trip, viaje_actualizado: updatedTrip });
+    // 3. Lógica de Notificación (Desacoplada)
+    if (hasDateChanged(oldTrip, updatedTrip)) {
+        // Ejecutamos en "background" sin await para no bloquear la respuesta al usuario
+        notifyParticipantsOfChanges(tripId, oldTrip, updatedTrip, creatorEmail);
+    }
+
+    // 4. Respuesta inmediata
+    res.json({ 
+        message: 'Viaje modificado correctamente', 
+        viaje_anterior: oldTrip, 
+        viaje_actualizado: updatedTrip 
+    });
+
   } catch (error) {
+    console.error('Error en updateTrip:', error); 
     res.status(500).json({ message: 'Error al actualizar el viaje' });
   }
+};
+
+
+// para manejar la obtención de datos necesarios para el email
+const notifyParticipantsOfChanges = async (tripId, oldTrip, updatedTrip, creatorEmail) => {
+    try {
+        const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
+        if (participants.length > 0) {
+            const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
+            console.log(`Notificaciones procesadas. Total: ${results.length}`);
+        }
+    } catch (error) {
+        console.error('Error enviando notificaciones en segundo plano:', error);
+    }
 };
 
 const deleteTrip = async (req, res) => {

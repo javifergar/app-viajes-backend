@@ -1,5 +1,7 @@
 const ParticipantsModel = require('../models/participants.model');
 const TripsModel = require('../models/trips.model');
+const jwt = require('jsonwebtoken');
+const UsersModel = require('../models/users.model');
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -7,9 +9,9 @@ const TripsModel = require('../models/trips.model');
  */
 const getParticipation = async (req, res) => {
   try {
-    const { participation_id } = req.params;
+    const { participationId } = req.params;
 
-    const participation = await ParticipantsModel.selectParticipationById(participation_id);
+    const participation = await ParticipantsModel.selectParticipationById(participationId);
 
     if (!participation) {
       return res.status(404).json({ message: 'Participation not found' });
@@ -32,10 +34,10 @@ const getParticipation = async (req, res) => {
  */
 const getParticipantsByTrip = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
     const { status } = req.query;
 
-    const participants = await ParticipantsModel.selectParticipantsByTrip(trip_id, status);
+    const participants = await ParticipantsModel.selectParticipantsByTrip(tripId, status);
 
     res.json(participants);
   } catch (error) {
@@ -95,12 +97,12 @@ const getMyCreatorRequests = async (req, res) => {
  */
 const createParticipation = async (req, res) => {
   try {
-    const { trip_id } = req.params;
+    const { tripId } = req.params;
     const userId = req.user.id_user;
     const { message } = req.body;
 
     // Verifica que el viaje existe
-    const trip = await TripsModel.tripsById(trip_id);
+    const trip = await TripsModel.tripsById(tripId);
 
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
@@ -117,7 +119,7 @@ const createParticipation = async (req, res) => {
     }
 
     // Verifica si ya hay registro para este viaje/usuario
-    const existing = await ParticipantsModel.selectByTripAndUser(trip_id, userId);
+    const existing = await ParticipantsModel.selectByTripAndUser(tripId, userId);
 
     if (existing) {
       return res.status(400).json({
@@ -126,7 +128,7 @@ const createParticipation = async (req, res) => {
     }
 
     // Insertar en la bbdd la solicitud de participación
-    const insertId = await ParticipantsModel.insertParticipation(trip_id, userId, message);
+    const insertId = await ParticipantsModel.insertParticipation(tripId, userId, message);
 
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
 
@@ -147,20 +149,20 @@ const createParticipation = async (req, res) => {
  */
 const updateParticipationStatus = async (req, res) => {
   try {
-    const { participation_id } = req.params;
+    const { participationId } = req.params;
     const { status } = req.body;
 
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    const affectedRows = await ParticipantsModel.updateParticipationStatus(participation_id, status);
+    const affectedRows = await ParticipantsModel.updateParticipationStatus(participationId, status);
 
     if (affectedRows === 0) {
       return res.status(404).json({ message: 'Participation not found' });
     }
 
-    const updatedParticipation = await ParticipantsModel.selectParticipationById(participation_id);
+    const updatedParticipation = await ParticipantsModel.selectParticipationById(participationId);
 
     return res.status(200).json(updatedParticipation);
   } catch (error) {
@@ -170,6 +172,52 @@ const updateParticipationStatus = async (req, res) => {
       return res.status(400).json({ error: 'Invalid status value. Set accepted, rejected, left or pending' });
     }
 
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * 7. VER LA INFORMACION DE LOS PARTICIPANTES DEL VIAJE
+ *  GET /api/participants/:trip_id
+ */
+const getParticipantsInfo = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+
+    // usuario logueado (si hay token)
+    let loggedUser = null;
+
+    const authHeader = req.headers['authorization'];
+
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const data = jwt.verify(token, process.env.SECRET_KEY);
+
+        const user = await UsersModel.selectById(data.userId);
+        if (user) {
+          loggedUser = user;
+        }
+      } catch (error) {
+        // Token inválido/expirado → lo ignoramos y seguimos como público
+        loggedUser = null;
+      }
+    }
+
+    let includePrivate = false;
+
+    // Si hay usuario logueado, comprobamos si está ACCEPTED en ese viaje
+    if (loggedUser?.id_user) {
+      const participations = await ParticipantsModel.selectParticipantsByTrip(tripId, 'accepted');
+
+      includePrivate = participations.some((p) => p.id_user === loggedUser.id_user);
+    }
+
+    const participantsInfo = await ParticipantsModel.selectParticipantsInfo(tripId, includePrivate);
+
+    return res.json(participantsInfo);
+  } catch (error) {
+    console.error('Error in getParticipantsInfo:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -187,6 +235,7 @@ const getAllParticipations = async (req, res) => {
 module.exports = {
   getParticipation,
   getParticipantsByTrip,
+  getParticipantsInfo,
   getMyRequests,
   getMyCreatorRequests,
   createParticipation,
