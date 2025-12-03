@@ -5,8 +5,8 @@ const { sendTripUpdateNotification } = require('../services/email.service');
 
 const getAllTrips = async (req, res) => {
   try {
-    const { status, destination, departure, date, creator } = req.query;
-    const trips = await TripModel.selectTrips({ status, destination, departure, date, creator });
+    const { status, destination, departure, date, creator, participant, participantStatus } = req.query;
+    const trips = await TripModel.selectTrips({ status, destination, departure, date, creator, participant, participantStatus });
 
     res.json(trips);
   } catch (error) {
@@ -81,7 +81,6 @@ const createTrip = async (req, res) => {
   }
 };
 
-
 const updateTrip = async (req, res) => {
   try {
     const { tripId } = req.params;
@@ -103,35 +102,33 @@ const updateTrip = async (req, res) => {
 
     // 3. Lógica de Notificación (Desacoplada)
     if (hasDateChanged(oldTrip, updatedTrip)) {
-        // Ejecutamos en "background" sin await para no bloquear la respuesta al usuario
-        notifyParticipantsOfChanges(tripId, oldTrip, updatedTrip, creatorEmail);
+      // Ejecutamos en "background" sin await para no bloquear la respuesta al usuario
+      notifyParticipantsOfChanges(tripId, oldTrip, updatedTrip, creatorEmail);
     }
 
     // 4. Respuesta inmediata
-    res.json({ 
-        message: 'Viaje modificado correctamente', 
-        viaje_anterior: oldTrip, 
-        viaje_actualizado: updatedTrip 
+    res.json({
+      message: 'Viaje modificado correctamente',
+      viaje_anterior: oldTrip,
+      viaje_actualizado: updatedTrip,
     });
-
   } catch (error) {
-    console.error('Error en updateTrip:', error); 
+    console.error('Error en updateTrip:', error);
     res.status(500).json({ message: 'Error al actualizar el viaje' });
   }
 };
 
-
 // para manejar la obtención de datos necesarios para el email
 const notifyParticipantsOfChanges = async (tripId, oldTrip, updatedTrip, creatorEmail) => {
-    try {
-        const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
-        if (participants.length > 0) {
-            const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
-            console.log(`Notificaciones procesadas. Total: ${results.length}`);
-        }
-    } catch (error) {
-        console.error('Error enviando notificaciones en segundo plano:', error);
+  try {
+    const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
+    if (participants.length > 0) {
+      const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
+      console.log(`Notificaciones procesadas. Total: ${results.length}`);
     }
+  } catch (error) {
+    console.error('Error enviando notificaciones en segundo plano:', error);
+  }
 };
 
 const deleteTrip = async (req, res) => {
