@@ -16,6 +16,7 @@ Parámetros opcionales:
 - creator
 - participant
 - participantStatus
+- cost
 
 Paginación:
 
@@ -145,6 +146,20 @@ Body: X
 Response:
 
 - Viajes donde ha solicitado participar
+
+### Recuperar viajes por precio máximo por participante
+
+Method: GET
+Url: /api/trips?cost={value}
+Headers: X
+Body: X
+
+Descripción:
+
+- Devuelve todos los viajes cuyo cost_per_person es menor o igual que el valor indicado.
+
+Ejemplo:
+GET /api/trips?cost=1000
 
 # Filtros
 
