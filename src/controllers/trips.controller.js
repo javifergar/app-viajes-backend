@@ -5,10 +5,20 @@ const { sendTripUpdateNotification } = require('../services/email.service');
 
 const getAllTrips = async (req, res) => {
   try {
-    const { status, destination, departure, date, creator, participant, participantStatus } = req.query;
-    const trips = await TripModel.selectTrips({ status, destination, departure, date, creator, participant, participantStatus });
+    const { status, destination, departure, date, creator, participant, participantStatus, sortBy, sortOrder } = req.query;
+    //const trips = await TripModel.selectTrips({ status, destination, departure, date, creator, participant, participantStatus });
 
-    res.json(trips);
+    let page = parseInt(req.query.page, 10) || 1;
+    let pageSize = parseInt(req.query.pageSize, 10) || 10;
+
+    if (page < 1) page = 1;
+    if (pageSize < 1) pageSize = 10;
+
+    const { trips, total } = await TripModel.selectTripsPaginated({ status, destination, departure, date, creator, participant, participantStatus, sortBy, sortOrder }, page, pageSize);
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    res.json({ data: trips, pagination: { total, page, pageSize, totalPages } });
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener los viajes' });
   }
