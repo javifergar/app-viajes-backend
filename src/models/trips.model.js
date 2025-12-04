@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-const selectTrips = async (filters = {}) => {
+const buildTripsFilterQuery = (filters = {}) => {
   let sql = `select t.*, u.name as creator_name, 
     (select count(*) from trip_participants tp where tp.id_trip = t.id_trip and tp.status = 'accepted') 
     as accepted_participants
@@ -9,7 +9,7 @@ const selectTrips = async (filters = {}) => {
     where 1=1
   `;
   const params = [];
-  const { status, departure, destination, date, creator, participant, participantStatus, creatorId, excludeCreatorForParticipant } = filters;
+  const { status, departure, destination, date, creator, participant, participantStatus, creatorId, excludeCreatorForParticipant, sortBy, sortOrder } = filters;
   if (status) {
     sql += ' and t.status = ?';
     params.push(status);
@@ -50,8 +50,42 @@ const selectTrips = async (filters = {}) => {
     params.push(creatorId);
   }
 
+  const allowedSortFields = {
+    start_date: 't.start_date',
+    end_date: 't.end_date',
+    min_participants: 't.min_participants',
+    max_participants: 'accepted_participants',
+    cost_per_person: 't.cost_per_person',
+    departure: 't.departure',
+    created_at: 't.created_at',
+  };
+
+  const sortColumn = allowedSortFields[sortBy] || 't.start_date';
+  const order = sortOrder === 'desc' ? 'DESC' : 'ASC';
+
+  sql += ` order by ${sortColumn} ${order}`;
+
+  return { sql, params };
+};
+
+const selectTrips = async (filters = {}) => {
+  const { sql, params } = buildTripsFilterQuery(filters);
   const [result] = await db.query(sql, params);
   return result;
+};
+
+const selectTripsPaginated = async (filters = {}, page = 1, pageSize = 10) => {
+  const { sql, params } = buildTripsFilterQuery(filters);
+
+  const countSql = `select count(*) as total from (${sql}) as sub`;
+  const [countRows] = await db.query(countSql, params);
+  const total = countRows[0]?.total || 0;
+
+  const offset = (page - 1) * pageSize;
+  const paginatedSql = `${sql} limit ? offset ?`;
+  const [rows] = await db.query(paginatedSql, [...params, pageSize, offset]);
+
+  return { trips: rows, total };
 };
 
 const tripsById = async (tripId) => {
@@ -125,4 +159,4 @@ const deleteTrip = async (tripId) => {
   return result;
 };
 
-module.exports = { selectTrips, tripsById, insertTrip, updateTrip, deleteTrip };
+module.exports = { selectTrips, selectTripsPaginated, tripsById, insertTrip, updateTrip, deleteTrip };
