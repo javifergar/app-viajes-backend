@@ -48,7 +48,7 @@ const update = async (req, res) => {
             return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
         }
         const userModified = await UsersModel.selectById(userId);
-        delete userModified.password; 
+       // delete userModified.password; 
         res.json(userModified);
     } catch (error) {
         console.error('Error al modificar el usuario:', error);
