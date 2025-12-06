@@ -17,8 +17,12 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            
         }
-
+        a {
+            text-decoration: none; 
+            color: inherit; 
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea08 0%, #764ba208 50%, #10b98108 100%);
@@ -157,24 +161,33 @@
 
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 11px 36px;
+            background: #17a2b8;
+            padding: 13px 42px;
+            margin: 16px 0;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 13px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 14px;
             border: none;
             cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
             letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #ffff;
         }
 
         .cta-button:hover {
+            background: #3fbed1;
             transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
         }
+
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
+        .cta-section .cta-button {
+    color: #ffff !important; /* ¡O un color azul similar al de la imagen! */
+}
 
         .footer {
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
