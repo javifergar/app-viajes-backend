@@ -2,6 +2,7 @@ const ParticipantsModel = require('../models/participants.model');
 const TripsModel = require('../models/trips.model');
 const jwt = require('jsonwebtoken');
 const UsersModel = require('../models/users.model');
+const { sendPendingRequestEmail } = require('../services/email.service');
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -132,12 +133,18 @@ const createParticipation = async (req, res) => {
 
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
 
+    // Enviar email al creador del viaje notificando nueva solicitud
+    sendPendingRequestEmail(newParticipation);
+
     return res.status(201).json(newParticipation);
+
+
   } catch (error) {
     console.error('Error in createParticipation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 /**
  * 6. CAMBIAR EL ESTADO DE UNA SOLICITUD/PARTICIPANTE
@@ -283,6 +290,8 @@ const getAllParticipations = async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener todos los participantes.' });
   }
 };
+
+
 
 module.exports = {
   getParticipation,

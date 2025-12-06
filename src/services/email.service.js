@@ -3,7 +3,8 @@ const nodemailer = require('nodemailer');
 const { nodemailerMjmlPlugin } = require('nodemailer-mjml');
 const { formatDate } = require('../utils/utils/date.utils'); 
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
+const TripsModel = require('../models/trips.model');
+const UsersModel = require('../models/users.model');
 const fs = require('fs');
 
 // Configuración del Transporter de NodeMailer para Gmail
@@ -49,6 +50,7 @@ const sendVerifyEmailTo = async (userData) => {
   });
 };
 
+//Envio de notificaciones por cambio de fechas de un viaje
 const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, creatorEmail) => {
   if (!transporter || participants.length === 0) return;
 
@@ -86,4 +88,72 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
   return Promise.allSettled(emailPromises);
 };
 
-module.exports = { sendTripUpdateNotification, sendVerifyEmailTo };
+
+
+
+//Envio de notificación de nueva solicitud de participación
+const sendPendingRequestEmail = async (newParticipation) => {
+if (!transporter) return;
+
+  try {
+    const { id_trip, id_user, message } = newParticipation;
+    
+    // Obtener datos necesarios
+    const participant = await UsersModel.selectById(id_user);
+    const trip = await TripsModel.tripsById(id_trip);
+    const creator = await UsersModel.selectById(trip.id_creator);
+
+    // Validar que existen los datos
+    if (!participant || !trip || !creator) return;
+
+    // Leer la plantilla HTML
+    const templatePath = path.join(__dirname, '../templates/pendingRequest.html');
+    let html = fs.readFileSync(templatePath, 'utf-8');
+
+    // URL del frontend para ver detalles del viaje
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app';
+    const appUrl = `${frontendUrl}/trips/${trip.id_trip}`;
+
+    // Interpolar variables en la plantilla
+    html = html
+      .replace(/{{creatorName}}/g, creator.name)
+      .replace(/{{userName}}/g, participant.name)
+      .replace(/{{tripTitle}}/g, trip.title)
+      .replace(/{{startDate}}/g, formatDate(trip.start_date))
+      .replace(/{{endDate}}/g, formatDate(trip.end_date))
+      .replace(/{{userMessage}}/g, message || 'Sin mensaje')
+      .replace(/{{appUrl}}/g, appUrl);
+
+    // Enviar correo
+    return transporter.sendMail({
+      from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
+      to: creator.email,
+      subject: `📨 ${participant.name} solicita unirse a tu viaje`,
+      html: html,
+    });
+  } catch (error) {
+    console.error('Error sending pending request email:', error);
+  }
+};
+
+
+module.exports = { sendTripUpdateNotification, sendVerifyEmailTo, sendPendingRequestEmail };
+
+
+
+// Necesito:
+//     - UsersModel.selectById(userId) - usuario que solicita
+//     - TripsModel.selectById(tripId) - datos del viaje
+//     - UsersModel.selectById(creatorId) - creador del viaje
+
+// Respuesta:
+// {
+
+//   "id_participation": 12,
+//   "id_trip": 101,
+//   "id_user": 1,
+//   "status": "pending",
+//   "message": "Quiero unirme al viaje.",
+//   "created_at": "2025-11-17T18:26:28.000Z",
+//   "updated_at": "2025-11-17T18:26:28.000Z"
+// }
