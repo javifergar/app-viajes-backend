@@ -29,21 +29,23 @@ if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
 const sendVerifyEmailTo = async (userData) => {
   if (!transporter) return;
 
+  // Leer la plantilla HTML
+  const templatePath = path.join(__dirname, '../templates/verify.html');
+  let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+
   // Generamos un JWT para identificar al usuario en la ruta de verificación
   const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY);
   const UrlBase = process.env.BASE_URL || 'http://localhost:3000';
   const verificationLink = `${UrlBase}/api/auth/verify?token=${token}`;
 
+  // Interpolar variables en la plantilla
+  let html = htmlTemplate.replace(/{{verificationLink}}/g, verificationLink);
+
   await transporter.sendMail({
-      from: `Viajes Compartidos <${process.env.GMAIL_USER}>`, // Usar el email configurado en el .env
+      from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: userData.email,
-      subject: 'Verificación de email',
-      // **Asumimos una plantilla MJML llamada 'verify.mjml' en la carpeta 'templates'**
-      template: 'verify', 
-      context: {
-          verificationLink: verificationLink,
-          // Puedes pasar más variables a la plantilla MJML aquí
-      },
+      subject: 'Verificación de email - Viajes Compartidos',
+      html: html,
   });
 };
 
