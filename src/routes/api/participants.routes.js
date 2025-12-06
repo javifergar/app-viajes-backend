@@ -14,5 +14,6 @@ router.get('/my-creator-requests', checkToken, participants.getMyCreatorRequests
 router.get('/:participationId', checkToken, participants.getParticipation);
 router.post('/:tripId', checkTripExists, checkToken, participants.createParticipation);
 router.patch('/:participationId', checkToken, participants.updateParticipationStatus);
+router.delete('/:participationId', checkToken, participants.deleteParticipation);
 
 module.exports = router;

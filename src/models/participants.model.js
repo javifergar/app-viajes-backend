@@ -167,6 +167,18 @@ const selectAcceptedParticipantsEmails = async (tripId) => {
   return result;
 };
 
+// Borrar una participación por id
+const deleteParticipation = async (participationId) => {
+  const [result] = await db.query(
+    `DELETE FROM trip_participants
+     WHERE id_participation = ?`,
+    [participationId]
+  );
+
+  return result.affectedRows; 
+};
+
+
 // TESTING
 const selectParticipations = async () => {
   const [result] = await db.query('select * from trip_participants');
@@ -185,4 +197,5 @@ module.exports = {
   selectParticipations,
   selectParticipantsInfo,
   selectAcceptedParticipantsEmails,
+  deleteParticipation,
 };

@@ -375,6 +375,19 @@ Response:
 
 - Objeto con la solicitud actualizada (estado y updated_at modificados)
 
+
+### Eliminar una participacion solicitud
+
+Method: DELETE  
+Url: /api/participants/:participationId  
+Headers: Token 
+
+
+Response:
+  -Mensaje de confirmación de borrado
+  -ID de la participación borrada
+
+
 ### 7. Ver información de los usuarios aceptados de un viaje
 
 Method: GET  

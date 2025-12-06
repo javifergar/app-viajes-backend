@@ -222,6 +222,58 @@ const getParticipantsInfo = async (req, res) => {
   }
 };
 
+/**
+ * 8. BORRAR UNA PARTICIPACIÓN
+ * DELETE /api/participants/:participationId
+ * 
+ * Reglas:
+ * - Solo se puede borrar si la participación está en estado pending <-- comentado por el momento
+ * - Solo puede borrar el usuario que creó la participación (id_user)
+ */
+const deleteParticipation = async (req, res) => {
+  try {
+    const { participationId } = req.params;
+
+    
+    const userId = req.user.id_user;
+
+
+    //Comprobar la participación
+    const participation = await ParticipantsModel.selectParticipationById(participationId);
+
+    if (!participation) {
+      return res.status(404).json({ message: 'Participation not found' });
+    }
+
+    // Comprobar que el estado sea pending
+    /*
+    if (participation.status !== 'pending') {
+      return res.status(400).json({
+        error: 'Only pending participations can be deleted',
+      });
+    }*/
+
+    //Comprobar que la participación pertenece al usuario que desea borrar
+    if (participation.id_user !== userId) {
+      return res.status(403).json({
+        error: 'You can only delete your own participations'+participation.id_user+'ss'+userId,
+      });
+    }
+
+    // Borrado fisico
+    const affectedRows = await ParticipantsModel.deleteParticipation(participationId);
+
+
+    return res.json({
+      message: 'Participation deleted successfully',
+      participationId: Number(participationId),
+    });
+  } catch (error) {
+    console.error('Error in deleteParticipation:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // TESTING
 const getAllParticipations = async (req, res) => {
   try {
@@ -240,5 +292,6 @@ module.exports = {
   getMyCreatorRequests,
   createParticipation,
   updateParticipationStatus,
+  deleteParticipation,
   getAllParticipations,
 };
