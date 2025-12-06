@@ -3,6 +3,8 @@ const UsersModel = require('../models/users.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const {sendVerifyEmailTo} = require('../services/email.service');
+const path = require('path');
+const fs = require('fs');
 
 
 const create = async (req, res) => {
@@ -45,28 +47,18 @@ const verify = async (req, res) => {
     const userId = payload.userId;
     // Esperar a que se implemente el verify_email en la BBDD
     //await UsersModel.updateUser(userId, { verify_email: 1 });
-    const loginUrl = process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login` : 'http://localhost:4200/login';
-    res.send(`
-      <!doctype html>
-      <html lang="es">
-        <head>
-          <meta charset="utf-8" />
-          <title>Email verificado</title>
-          <meta http-equiv="refresh" content="2;url=${loginUrl}" />
-        </head>
-        <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 80px;">
-          <h1>Email verificado</h1>
-          <p>Tu correo ha sido verificado correctamente.</p>
-          <p>Seras redirigido al login en unos segundos...</p>
-          <p><a href="${loginUrl}">Ir al login ahora</a></p>
-          <script>
-            setTimeout(function () {
-              window.location.href = '${loginUrl}';
-            }, 2000);
-          </script>
-        </body>
-      </html>
-    `);
+    
+    // Leer la plantilla HTML
+    const templatePath = path.join(__dirname, '../templates/emailVerified.html');
+    let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+
+    // URL de redirección
+    const redirectUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app/';
+    
+    // Interpolar variable en la plantilla
+    let html = htmlTemplate.replace(/{{redirectUrl}}/g, redirectUrl);
+
+    res.send(html);
   } catch (err) {
     res.status(400).send('Token inválido o expirado');
   }

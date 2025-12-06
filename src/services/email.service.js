@@ -1,60 +1,84 @@
-
-const { Resend } = require('resend');
+const path = require('path');
+const nodemailer = require('nodemailer');
+const { nodemailerMjmlPlugin } = require('nodemailer-mjml');
 const { formatDate } = require('../utils/utils/date.utils'); 
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const fs = require('fs');
 
-// Inicializar solo si existe la key, buena práctica para evitar crash en dev
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// Configuración del Transporter de NodeMailer para Gmail
+let transporter = null;
+if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.GMAIL_USER, // Tu email de Gmail
+            pass: process.env.GMAIL_APP_PASSWORD, // La Contraseña de Aplicación de Google (App Password)
+        },
+    });
+
+    // Incluir el plugin MJML para plantillas
+    transporter.use('compile', nodemailerMjmlPlugin({
+        // La ruta asume que tienes una carpeta 'templates' en la raíz de tu proyecto (junto a 'config', 'controllers', etc.)
+        templateFolder: path.join(__dirname, '../templates'), 
+    }));
+}
+
 
 //Envio de un correo electrónico de verificación agnóstico a creación o modificación
 const sendVerifyEmailTo = async (userData) => {
-  // Reseteamos el valor de verify_email de la BBDD
-  //await db.query('UPDATE users SET verify_email = 0 WHERE id_user = ?', [userData.id_user]);
+  if (!transporter) return;
+
+  // Leer la plantilla HTML
+  const templatePath = path.join(__dirname, '../templates/verify.html');
+  let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+
   // Generamos un JWT para identificar al usuario en la ruta de verificación
   const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY);
   const UrlBase = process.env.BASE_URL || 'http://localhost:3000';
   const verificationLink = `${UrlBase}/api/auth/verify?token=${token}`;
 
-  await resend.emails.send({
-      from: 'Viajes Compartidos <onboarding@resend.dev>',
-      to: process.env.EMAIL_RESEND, //userData.email,
-      subject: 'Verificación de email ',
-      text: `Verifica tu correo haciendo clic en el siguiente enlace: ${verificationLink}`
+  // Interpolar variables en la plantilla
+  let html = htmlTemplate.replace(/{{verificationLink}}/g, verificationLink);
+
+  await transporter.sendMail({
+      from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
+      to: userData.email,
+      subject: 'Verificación de email - Viajes Compartidos',
+      html: html,
   });
 };
 
-// Plantilla HTML privada (no se exporta)
-const generateDateChangeTemplate = (participantName, tripTitle, oldTrip, newTrip) => {
-  return `
-    <h2>¡Hola ${participantName}!</h2>
-    <p>Te informamos que las fechas del viaje <strong>"${tripTitle}"</strong> han sido modificadas.</p>
-    
-    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-        <p style="margin: 5px 0;"><strong>📅 Nuevas fechas:</strong></p>
-        <ul style="list-style: none; padding-left: 0;">
-            <li>Salida: ${formatDate(newTrip.start_date)}</li>
-            <li>Regreso: ${formatDate(newTrip.end_date)}</li>
-        </ul>
-        <hr style="border: 0; border-top: 1px solid #ccc;">
-        <p style="font-size: 0.9em; color: #666;">(Anteriormente: ${formatDate(oldTrip.start_date)} - ${formatDate(oldTrip.end_date)})</p>
-    </div>
-    <p>Por favor, revisa la aplicación para más detalles.</p>
-  `;
-};
-
 const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, creatorEmail) => {
-  if (!resend || participants.length === 0) return;
+  if (!transporter || participants.length === 0) return;
+
+  // Leer la plantilla HTML
+  const templatePath = path.join(__dirname, '../templates/datesModified.html');
+  let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+
+  // URL del frontend para ver detalles del viaje
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app';
+  const tripDetailsUrl = `${frontendUrl}/trips/${updatedTrip.id_trip}`;
 
   const emailPromises = participants.map(participant => {
     // Lógica de exclusión del creador
     if (participant.email === creatorEmail) return Promise.resolve();
 
-    return resend.emails.send({
-      from: 'Viajes Compartidos <onboarding@resend.dev>',
+    // Interpolar variables en la plantilla
+    let html = htmlTemplate
+      .replace(/{{participantName}}/g, participant.name)
+      .replace(/{{tripTitle}}/g, updatedTrip.title)
+      .replace(/{{newStartDate}}/g, formatDate(updatedTrip.start_date))
+      .replace(/{{newEndDate}}/g, formatDate(updatedTrip.end_date))
+      .replace(/{{oldStartDate}}/g, formatDate(oldTrip.start_date))
+      .replace(/{{oldEndDate}}/g, formatDate(oldTrip.end_date))
+      .replace(/{{tripDetailsUrl}}/g, tripDetailsUrl);
+
+    return transporter.sendMail({
+      from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: participant.email,
       subject: `⚠️ Cambio de fechas: ${updatedTrip.title}`,
-      text: generateDateChangeTemplate(participant.name, updatedTrip.title, oldTrip, updatedTrip)
+      html: html,
     });
   });
 
