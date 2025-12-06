@@ -1,0 +1,13 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" color="#333">Verificación de Email</mj-text>
+        <mj-text>Gracias por registrarte. Por favor, haz clic en el botón para verificar tu cuenta:</mj-text>
+        <mj-button href="{{verificationLink}}" background-color="#4CAF50" color="white">
+          Verificar Email
+        </mj-button>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
