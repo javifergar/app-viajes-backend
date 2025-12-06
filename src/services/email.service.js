@@ -54,6 +54,10 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
   const templatePath = path.join(__dirname, '../templates/datesModified.html');
   let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
 
+  // URL del frontend para ver detalles del viaje
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app';
+  const tripDetailsUrl = `${frontendUrl}/trips/${updatedTrip.id_trip}`;
+
   const emailPromises = participants.map(participant => {
     // Lógica de exclusión del creador
     if (participant.email === creatorEmail) return Promise.resolve();
@@ -65,7 +69,8 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
       .replace(/{{newStartDate}}/g, formatDate(updatedTrip.start_date))
       .replace(/{{newEndDate}}/g, formatDate(updatedTrip.end_date))
       .replace(/{{oldStartDate}}/g, formatDate(oldTrip.start_date))
-      .replace(/{{oldEndDate}}/g, formatDate(oldTrip.end_date));
+      .replace(/{{oldEndDate}}/g, formatDate(oldTrip.end_date))
+      .replace(/{{tripDetailsUrl}}/g, tripDetailsUrl);
 
     return transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
