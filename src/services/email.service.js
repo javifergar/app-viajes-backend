@@ -96,7 +96,7 @@ const sendPendingRequestEmail = async (newParticipation) => {
 if (!transporter) return;
 
   try {
-    const { id_trip, id_user, message } = newParticipation;
+    const { id_participation, id_trip, id_user, message } = newParticipation;
     
     // Obtener datos necesarios
     const participant = await UsersModel.selectById(id_user);
@@ -110,11 +110,14 @@ if (!transporter) return;
     const templatePath = path.join(__dirname, '../templates/pendingRequest.html');
     let html = fs.readFileSync(templatePath, 'utf-8');
 
-    // URL del frontend para ver detalles del viaje
-    const frontendUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app';
-    const appUrl = `${frontendUrl}/trips/${trip.id_trip}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-    // Interpolar variables en la plantilla
+    // Generar tokens JWT
+    const acceptToken = jwt.sign({ id_participation, action: 'accept' }, process.env.SECRET_KEY, { expiresIn: '7d' });
+    const rejectToken = jwt.sign({ id_participation, action: 'reject' }, process.env.SECRET_KEY, { expiresIn: '7d' });
+
+    // Interpolar variables
     html = html
       .replace(/{{creatorName}}/g, creator.name)
       .replace(/{{userName}}/g, participant.name)
@@ -122,9 +125,10 @@ if (!transporter) return;
       .replace(/{{startDate}}/g, formatDate(trip.start_date))
       .replace(/{{endDate}}/g, formatDate(trip.end_date))
       .replace(/{{userMessage}}/g, message || 'Sin mensaje')
-      .replace(/{{appUrl}}/g, appUrl);
+      .replace(/{{appUrl}}/g, `${frontendUrl}/requests`)
+      .replace(/{{acept}}/g, `${baseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
+      .replace(/{{reject}}/g, `${baseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
 
-    // Enviar correo
     return transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: creator.email,
@@ -157,3 +161,5 @@ module.exports = { sendTripUpdateNotification, sendVerifyEmailTo, sendPendingReq
 //   "created_at": "2025-11-17T18:26:28.000Z",
 //   "updated_at": "2025-11-17T18:26:28.000Z"
 // }
+
+// nota: si envias al usuario a una pagina que no está alojada en el front, no se va renderizar ues no está desplegada en ningun sito....averiguar como hacerlo

@@ -3,6 +3,9 @@ const TripsModel = require('../models/trips.model');
 const jwt = require('jsonwebtoken');
 const UsersModel = require('../models/users.model');
 const { sendPendingRequestEmail } = require('../services/email.service');
+const path = require('path');
+const fs = require('fs');
+
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -291,6 +294,33 @@ const getAllParticipations = async (req, res) => {
   }
 };
 
+/**
+ * 9. ACEPTAR O RECHAZAR POR TOKEN (desde email)
+ * GET /api/participants/:participationId/action?token=JWT
+ */
+const handleParticipationAction = async (req, res) => {
+  try {
+    const { participationId } = req.params;
+    const { token } = req.query;
+
+    if (!token) return res.status(400).json({ error: 'Token requerido' });
+
+    const { id_participation, action } = jwt.verify(token, process.env.SECRET_KEY);
+
+    if (id_participation !== parseInt(participationId) || !['accept', 'reject'].includes(action)) {
+      return res.status(403).json({ error: 'Token inválido' });
+    }
+
+    const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+    await ParticipantsModel.updateParticipationStatus(participationId, newStatus);
+
+    res.json({ message: `Solicitud ${newStatus} correctamente` });
+  } catch (error) {
+    const errorMsg = error.name === 'TokenExpiredError' ? 'Token expirado' : 'Token inválido';
+    res.status(400).json({ error: errorMsg });
+  }
+};
+
 
 
 module.exports = {
@@ -303,4 +333,5 @@ module.exports = {
   updateParticipationStatus,
   deleteParticipation,
   getAllParticipations,
+  handleParticipationAction,
 };

@@ -154,6 +154,11 @@
             padding-top: 24px;
             border-top: 1px solid #e2e8f0;
         }
+        .cta-section .cta-button {
+            color: #ffff !important; 
+        }
+
+
 
         .footer-text {
             font-size: 13px;
@@ -183,7 +188,12 @@
             color: white;
             text-decoration: none;
         }
-
+        .cta-acept {
+            background-color: #28a745;
+        }
+        .cta-rejected {
+            background-color: #dc3545;
+        }
         .cta-button:visited {
             color: white;
             text-decoration: none;
@@ -263,10 +273,16 @@
             <!-- CTA Section -->
             <section class="cta-section">
                 <p class="footer-text">
-                    Revisa la solicitud en tu aplicación para aceptarla o rechazarla.
+                    Para gestionar tus solicitudes de viaje, haz clic en el botón de abajo.
                 </p>
-                <a href="{{appUrl}}" class="cta-button">Ver solicitud</a>
+                <a href="{{appUrl}}" class="cta-button">Ir a mis solicitudes</a>
             </section>
+            <div>
+                <section class="cta-section">
+                    <a href="{{acept}}" class="cta-button cta-acept">Aceptar</a>
+                    <a href="{{reject}}" class="cta-button cta-rejected">Rechazar</a>
+                </section>
+            </div>
         </main>
 
         <!-- Footer -->
