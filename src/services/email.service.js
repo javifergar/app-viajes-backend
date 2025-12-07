@@ -93,11 +93,11 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
 
 //Envio de notificación de nueva solicitud de participación
 const sendPendingRequestEmail = async (newParticipation) => {
-if (!transporter) return;
+  if (!transporter) return;
 
   try {
     const { id_participation, id_trip, id_user, message } = newParticipation;
-    
+
     // Obtener datos necesarios
     const participant = await UsersModel.selectById(id_user);
     const trip = await TripsModel.tripsById(id_trip);
@@ -110,8 +110,9 @@ if (!transporter) return;
     const templatePath = path.join(__dirname, '../templates/pendingRequest.html');
     let html = fs.readFileSync(templatePath, 'utf-8');
 
+    // **IMPORTANTE:** Definimos las dos URLs
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // <-- Usa la variable dedicada para el API
 
     // Generar tokens JWT
     const acceptToken = jwt.sign({ id_participation, action: 'accept' }, process.env.SECRET_KEY, { expiresIn: '7d' });
@@ -126,8 +127,9 @@ if (!transporter) return;
       .replace(/{{endDate}}/g, formatDate(trip.end_date))
       .replace(/{{userMessage}}/g, message || 'Sin mensaje')
       .replace(/{{appUrl}}/g, `${frontendUrl}/requests`)
-      .replace(/{{acept}}/g, `${baseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
-      .replace(/{{reject}}/g, `${baseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
+      // Los enlaces de acción ahora apuntan a la URL pública del API (Render)
+      .replace(/{{acept}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
+      .replace(/{{reject}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
 
     return transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
