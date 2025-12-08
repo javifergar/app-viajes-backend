@@ -137,7 +137,7 @@ const createParticipation = async (req, res) => {
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
 
     // Enviar email al creador del viaje notificando nueva solicitud
-    sendPendingRequestEmail(newParticipation);
+    await sendPendingRequestEmail(newParticipation);
 
     return res.status(201).json(newParticipation);
 
