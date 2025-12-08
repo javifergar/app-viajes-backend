@@ -108,10 +108,19 @@ const sendPendingRequestEmail = async (newParticipation) => {
     // Obtener datos necesarios
     const participant = await UsersModel.selectById(id_user);
     const trip = await TripsModel.tripsById(id_trip);
-    const creator = await UsersModel.selectById(trip.id_creator);
 
     // Validar que existen los datos
-    if (!participant || !trip || !creator) return;
+    if (!participant || !trip) {
+      console.error('sendPendingRequestEmail: Missing data', { participant: !!participant, trip: !!trip });
+      return;
+    }
+
+    const creator = await UsersModel.selectById(trip.id_creator);
+
+    if (!creator) {
+      console.error('sendPendingRequestEmail: Creator not found', { id_creator: trip.id_creator });
+      return;
+    }
 
     // Leer la plantilla HTML
     const templatePath = path.join(__dirname, '../templates/pendingRequest.html');
@@ -138,6 +147,8 @@ const sendPendingRequestEmail = async (newParticipation) => {
       .replace(/{{accepted}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
       .replace(/{{rejected}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
 
+    console.log('📧 Attempting to send email to:', creator.email);
+
     return await transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: creator.email,
@@ -145,7 +156,8 @@ const sendPendingRequestEmail = async (newParticipation) => {
       html: html,
     });
   } catch (error) {
-    console.error('Error sending pending request email:', error);
+    console.error('❌ Error sending pending request email:', error.message);
+    throw error;
   }
 };
 
