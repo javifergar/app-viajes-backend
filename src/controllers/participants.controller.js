@@ -2,6 +2,10 @@ const ParticipantsModel = require('../models/participants.model');
 const TripsModel = require('../models/trips.model');
 const jwt = require('jsonwebtoken');
 const UsersModel = require('../models/users.model');
+const { sendPendingRequestEmail } = require('../services/email.service');
+const path = require('path');
+const fs = require('fs');
+
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -132,12 +136,18 @@ const createParticipation = async (req, res) => {
 
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
 
+    // Enviar email al creador del viaje notificando nueva solicitud
+    sendPendingRequestEmail(newParticipation);
+
     return res.status(201).json(newParticipation);
+
+
   } catch (error) {
     console.error('Error in createParticipation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 /**
  * 6. CAMBIAR EL ESTADO DE UNA SOLICITUD/PARTICIPANTE
@@ -284,6 +294,53 @@ const getAllParticipations = async (req, res) => {
   }
 };
 
+/**
+ * 9. ACEPTAR O RECHAZAR POR TOKEN (desde email)
+ * GET /api/participants/:participationId/action?token=JWT
+ */
+const handleParticipationAction = async (req, res) => {
+  // Define la URL base de tu frontend para la redirección
+  const frontendRedirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/requests`;
+
+  try {
+    const { participationId } = req.params;
+    const { token } = req.query;
+
+    if (!token) {
+      // Redirigir con mensaje de error si falta el token
+      return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent('Token requerido para la acción.')}`);
+    }
+
+    // 1. Verificar el Token
+    const { id_participation, action } = jwt.verify(token, process.env.SECRET_KEY);
+
+    if (id_participation !== parseInt(participationId) || !['accept', 'reject'].includes(action)) {
+      // Redirigir con mensaje de error si el token es inválido
+      return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent('Token inválido para esta solicitud.')}`);
+    }
+
+    // 2. Realizar la Acción (Actualizar DB)
+    const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+    await ParticipantsModel.updateParticipationStatus(participationId, newStatus);
+
+    // 3. Redirección Exitosa (302) al frontend con el resultado
+    // Enviamos el resultado como query params (ej: ?action=accept&status=success)
+    const successMessage = `action=${action}&status=success`;
+    return res.redirect(302, `${frontendRedirectUrl}?${successMessage}`);
+
+  } catch (error) {
+    let errorMsg = 'Error al procesar la solicitud';
+    if (error.name === 'TokenExpiredError') {
+      errorMsg = 'Token expirado. La solicitud no fue procesada.';
+    } else {
+      console.error('Error al manejar la acción de participación:', error);
+    }
+
+    // 4. Redirección con Error (general o expiración)
+    return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent(errorMsg)}`);
+  }
+};
+
 module.exports = {
   getParticipation,
   getParticipantsByTrip,
@@ -294,4 +351,5 @@ module.exports = {
   updateParticipationStatus,
   deleteParticipation,
   getAllParticipations,
+  handleParticipationAction,
 };
