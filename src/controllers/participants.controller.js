@@ -136,8 +136,10 @@ const createParticipation = async (req, res) => {
 
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
 
-    // Enviar email al creador del viaje notificando nueva solicitud
-    await sendPendingRequestEmail(newParticipation);
+    // Enviar email al creador del viaje notificando nueva solicitud (en segundo plano)
+    sendPendingRequestEmail(newParticipation)
+      .then(() => console.log('✅ Email sent successfully for participation:', insertId))
+      .catch(err => console.error('❌ Error sending email for participation:', insertId, err.message));
 
     return res.status(201).json(newParticipation);
 
@@ -155,8 +157,8 @@ const createParticipation = async (req, res) => {
  * { "status": "accepted" }
  * { "status": "rejected" }
  * { "status": "left" }
- * { "status": "pending" }
- */
+  * { "status": "pending" }
+  */
 const updateParticipationStatus = async (req, res) => {
   try {
     const { participationId } = req.params;
@@ -244,7 +246,7 @@ const deleteParticipation = async (req, res) => {
   try {
     const { participationId } = req.params;
 
-    
+
     const userId = req.user.id_user;
 
 
@@ -266,7 +268,7 @@ const deleteParticipation = async (req, res) => {
     //Comprobar que la participación pertenece al usuario que desea borrar
     if (participation.id_user !== userId) {
       return res.status(403).json({
-        error: 'You can only delete your own participations'+participation.id_user+'ss'+userId,
+        error: 'You can only delete your own participations' + participation.id_user + 'ss' + userId,
       });
     }
 
