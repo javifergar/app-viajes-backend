@@ -45,8 +45,8 @@ const verify = async (req, res) => {
   try {
     const payload = jwt.verify(token, process.env.SECRET_KEY); 
     const userId = payload.userId;
-    // Esperar a que se implemente el verify_email en la BBDD
-    //await UsersModel.updateUser(userId, { verify_email: 1 });
+    // Actualizar el campo verified_email a true
+    await UsersModel.updateEmailVerified(userId);
     
     // Leer la plantilla HTML
     const templatePath = path.join(__dirname, '../templates/emailVerified.html');
