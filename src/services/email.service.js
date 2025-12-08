@@ -1,7 +1,7 @@
 const path = require('path');
 const nodemailer = require('nodemailer');
 const { nodemailerMjmlPlugin } = require('nodemailer-mjml');
-const { formatDate } = require('../utils/utils/date.utils');
+const { formatDate } = require('../utils/utils/date.utils'); 
 const jwt = require('jsonwebtoken');
 const TripsModel = require('../models/trips.model');
 const UsersModel = require('../models/users.model');
@@ -10,19 +10,19 @@ const fs = require('fs');
 // Configuración del Transporter de NodeMailer para Gmail
 let transporter = null;
 if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER, // Tu email de Gmail
-      pass: process.env.GMAIL_APP_PASSWORD, // La Contraseña de Aplicación de Google (App Password)
-    },
-  });
+    transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.GMAIL_USER, // Tu email de Gmail
+            pass: process.env.GMAIL_APP_PASSWORD, // La Contraseña de Aplicación de Google (App Password)
+        },
+    });
 
-  // Incluir el plugin MJML para plantillas
-  transporter.use('compile', nodemailerMjmlPlugin({
-    // La ruta asume que tienes una carpeta 'templates' en la raíz de tu proyecto (junto a 'config', 'controllers', etc.)
-    templateFolder: path.join(__dirname, '../templates'),
-  }));
+    // Incluir el plugin MJML para plantillas
+    transporter.use('compile', nodemailerMjmlPlugin({
+        // La ruta asume que tienes una carpeta 'templates' en la raíz de tu proyecto (junto a 'config', 'controllers', etc.)
+        templateFolder: path.join(__dirname, '../templates'), 
+    }));
 }
 
 
@@ -33,27 +33,27 @@ const sendVerifyEmailTo = async (userData) => {
 
   try {
     // Leer la plantilla HTML
-    const templatePath = path.join(__dirname, '../templates/verify.html');
-    let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+  const templatePath = path.join(__dirname, '../templates/verify.html');
+  let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
 
-    //Generar link de verificación
-    const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY, { expiresIn: '1d' });
+  //Generar link de verificación
+  const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY, { expiresIn: '1d' });
 
-    // URL pública del backend para procesar la verificación
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    const verificationLink = `${apiBaseUrl}/api/auth/verify?token=${token}`;
+  // URL pública del backend para procesar la verificación
+  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+  const verificationLink = `${apiBaseUrl}/api/auth/verify?token=${token}`;
+  
+  // Interpolar variables en la plantilla
+  let html = htmlTemplate.replace(/{{verificationLink}}/g, verificationLink);
 
-    // Interpolar variables en la plantilla
-    let html = htmlTemplate.replace(/{{verificationLink}}/g, verificationLink);
-
-    await transporter.sendMail({
+  await transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: userData.email,
       subject: 'Verificación de email - Viajes Compartidos',
       html: html,
-    });
+  });
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error('Error sending verification email:', error); 
   }
 };
 
@@ -69,7 +69,7 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
   const frontendUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app';
   const tripDetailsUrl = `${frontendUrl}/trips/${updatedTrip.id_trip}`;
 
-  const emailPromises = participants.map(async participant => {
+  const emailPromises = participants.map(participant => {
     // Lógica de exclusión del creador
     if (participant.email === creatorEmail) return Promise.resolve();
 
@@ -83,7 +83,7 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
       .replace(/{{oldEndDate}}/g, formatDate(oldTrip.end_date))
       .replace(/{{tripDetailsUrl}}/g, tripDetailsUrl);
 
-    return await transporter.sendMail({
+    return transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: participant.email,
       subject: `⚠️ Cambio de fechas: ${updatedTrip.title}`,
@@ -122,8 +122,8 @@ const sendPendingRequestEmail = async (newParticipation) => {
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // <-- Usa la variable dedicada para el API
 
     // Generar tokens JWT
-    const acceptToken = jwt.sign({ id_participation, action: 'accept' }, process.env.SECRET_KEY, { expiresIn: '7d' });
-    const rejectToken = jwt.sign({ id_participation, action: 'reject' }, process.env.SECRET_KEY, { expiresIn: '7d' });
+    const acceptToken = jwt.sign({ id_participation, action: 'accepted' }, process.env.SECRET_KEY, { expiresIn: '7d' });
+    const rejectToken = jwt.sign({ id_participation, action: 'rejected' }, process.env.SECRET_KEY, { expiresIn: '7d' });
 
     // Interpolar variables
     html = html
@@ -138,7 +138,7 @@ const sendPendingRequestEmail = async (newParticipation) => {
       .replace(/{{accepted}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
       .replace(/{{rejected}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
 
-    return await transporter.sendMail({
+    return transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
       to: creator.email,
       subject: `📨 ${participant.name} solicita unirse a tu viaje`,
