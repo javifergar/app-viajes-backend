@@ -3,8 +3,6 @@ const UsersModel = require('../models/users.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const {sendVerifyEmailTo} = require('../services/email.service');
-const path = require('path');
-const fs = require('fs');
 
 
 const create = async (req, res) => {
@@ -40,27 +38,38 @@ const login = async (req, res) => {
 };
 
 const verify = async (req, res) => {
+  const frontendRedirectUrl = `${process.env.FRONTEND_URL || 'https://app-viajes.netlify.app'}/auth/verify`;
   const { token } = req.query;
-  if (!token) return res.status(400).send('Falta token');
+  if (!token) {
+    const errorMessage = encodeURIComponent('Falta token');
+    return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${errorMessage}`);
+  }
+
   try {
     const payload = jwt.verify(token, process.env.SECRET_KEY); 
     const userId = payload.userId;
-    // Actualizar el campo verified_email a true
-    await UsersModel.updateEmailVerified(userId);
     
-    // Leer la plantilla HTML
-    const templatePath = path.join(__dirname, '../templates/emailVerified.html');
-    let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
+    // Comprobar si el usuario ya existe y si ya tiene el email verificado
+    const user = await UsersModel.selectById(userId);
+    if (!user) {
+      const errorMessage = encodeURIComponent('Usuario no encontrado');
+      return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${errorMessage}`);
+    }
 
-    // URL de redirección
-    const redirectUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app/';
-    
-    // Interpolar variable en la plantilla
-    let html = htmlTemplate.replace(/{{redirectUrl}}/g, redirectUrl);
+    if (!user.verified_email) {
+      await UsersModel.updateEmailVerified(userId);
+    }
 
-    res.send(html);
+    // Emitir token de sesión para iniciar la sesión automáticamente en el front
+    const sessionToken = jwt.sign({ userId: user.id_user }, process.env.SECRET_KEY);
+
+    const successParams = `status=success&token=${encodeURIComponent(sessionToken)}`;
+    return res.redirect(302, `${frontendRedirectUrl}?${successParams}`);
   } catch (err) {
-    res.status(400).send('Token inválido o expirado');
+    const errorMessage = err.name === 'TokenExpiredError'
+      ? 'Token expirado'
+      : 'Token inválido';
+    return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent(errorMessage)}`);
   }
 };
 

@@ -26,19 +26,23 @@ if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
 }
 
 
-//Envio de un correo electrónico de verificación agnóstico a creación o modificación
+//Envio de un correo electrónico de verificación al registrarse
 const sendVerifyEmailTo = async (userData) => {
+
   if (!transporter) return;
 
-  // Leer la plantilla HTML
+  try {
+    // Leer la plantilla HTML
   const templatePath = path.join(__dirname, '../templates/verify.html');
   let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
 
-  // Generamos un JWT para identificar al usuario en la ruta de verificación
-  const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY);
-  const UrlBase = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const verificationLink = `${UrlBase}/auth/verify?token=${token}`;
+  //Generar link de verificación
+  const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY, { expiresIn: '1d' });
 
+  // URL pública del backend para procesar la verificación
+  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+  const verificationLink = `${apiBaseUrl}/api/auth/verify?token=${token}`;
+  
   // Interpolar variables en la plantilla
   let html = htmlTemplate.replace(/{{verificationLink}}/g, verificationLink);
 
@@ -48,6 +52,9 @@ const sendVerifyEmailTo = async (userData) => {
       subject: 'Verificación de email - Viajes Compartidos',
       html: html,
   });
+  } catch (error) {
+    console.error('Error sending verification email:', error); 
+  }
 };
 
 //Envio de notificaciones por cambio de fechas de un viaje
