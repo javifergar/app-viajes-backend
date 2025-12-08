@@ -122,8 +122,8 @@ const sendPendingRequestEmail = async (newParticipation) => {
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // <-- Usa la variable dedicada para el API
 
     // Generar tokens JWT
-    const acceptToken = jwt.sign({ id_participation, action: 'accept' }, process.env.SECRET_KEY, { expiresIn: '7d' });
-    const rejectToken = jwt.sign({ id_participation, action: 'reject' }, process.env.SECRET_KEY, { expiresIn: '7d' });
+    const acceptToken = jwt.sign({ id_participation, action: 'accepted' }, process.env.SECRET_KEY, { expiresIn: '7d' });
+    const rejectToken = jwt.sign({ id_participation, action: 'rejected' }, process.env.SECRET_KEY, { expiresIn: '7d' });
 
     // Interpolar variables
     html = html
@@ -135,8 +135,8 @@ const sendPendingRequestEmail = async (newParticipation) => {
       .replace(/{{userMessage}}/g, message || 'Sin mensaje')
       .replace(/{{appUrl}}/g, `${frontendUrl}/requests`)
       // Los enlaces de acción ahora apuntan a la URL pública del API (Render)
-      .replace(/{{acept}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
-      .replace(/{{reject}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
+      .replace(/{{accepted}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
+      .replace(/{{rejected}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
 
     return transporter.sendMail({
       from: `Viajes Compartidos <${process.env.GMAIL_USER}>`,
