@@ -35,7 +35,7 @@ const sendVerifyEmailTo = async (userData) => {
 
   // Generamos un JWT para identificar al usuario en la ruta de verificación
   const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY);
-  const UrlBase = process.env.FRONTEND_UR || 'http://localhost:3000';
+  const UrlBase = process.env.FRONTEND_URL || 'http://localhost:3000';
   const verificationLink = `${UrlBase}/api/auth/verify?token=${token}`;
 
   // Interpolar variables en la plantilla
