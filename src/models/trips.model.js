@@ -9,7 +9,7 @@ const buildTripsFilterQuery = (filters = {}) => {
     where 1=1
   `;
   const params = [];
-  const { status, departure, destination, date, creator, participant, participantStatus, creatorId, excludeCreatorForParticipant, sortBy, sortOrder, cost } = filters;
+  const { status, departure, destination, start_date, end_date, creator, participant, participantStatus, creatorId, excludeCreatorForParticipant, sortBy, sortOrder, cost } = filters;
   if (status) {
     sql += ' and t.status = ?';
     params.push(status);
@@ -22,9 +22,13 @@ const buildTripsFilterQuery = (filters = {}) => {
     sql += ' and t.destination LIKE ?';
     params.push(`%${destination}%`);
   }
-  if (date) {
+  if (start_date) {
     sql += ' and t.start_date = ?';
-    params.push(date);
+    params.push(start_date);
+  }
+  if (end_date) {
+    sql += ' and t.end_date = ?';
+    params.push(end_date);
   }
   if (creator) {
     sql += ' and u.name LIKE ?';
