@@ -138,7 +138,13 @@ const notifyParticipantsOfChanges = async (tripId, oldTrip, updatedTrip, creator
     const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
     if (participants.length > 0) {
       const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
-      console.log(`Notificaciones procesadas. Total: ${results.length}`);
+      
+      // Verificamos si results existe antes de leer .length
+      if (results && results.length) {
+          console.log(`✅ Notificaciones procesadas. Total enviadas/intentadas: ${results.length}`);
+      } else {
+          console.warn('⚠️ No se enviaron notificaciones (Revise GMAIL_USER en .env)');
+      }
     }
   } catch (error) {
     console.error('Error enviando notificaciones en segundo plano:', error);
