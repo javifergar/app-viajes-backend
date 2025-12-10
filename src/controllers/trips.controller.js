@@ -5,7 +5,7 @@ const { sendTripUpdateNotification } = require('../services/email.service');
 
 const getAllTrips = async (req, res) => {
   try {
-    const { status, destination, departure, date, creator, participant, participantStatus, sortBy, sortOrder, cost } = req.query;
+    const { status, destination, departure, start_date, end_date, creator, participant, participantStatus, sortBy, sortOrder, cost } = req.query;
     //const trips = await TripModel.selectTrips({ status, destination, departure, date, creator, participant, participantStatus });
 
     let page = parseInt(req.query.page, 10) || 1;
@@ -14,7 +14,11 @@ const getAllTrips = async (req, res) => {
     if (page < 1) page = 1;
     if (pageSize < 1) pageSize = 10;
 
-    const { trips, total } = await TripModel.selectTripsPaginated({ status, destination, departure, date, creator, participant, participantStatus, sortBy, sortOrder, cost }, page, pageSize);
+    const { trips, total } = await TripModel.selectTripsPaginated(
+      { status, destination, departure, start_date, end_date, creator, participant, participantStatus, sortBy, sortOrder, cost },
+      page,
+      pageSize
+    );
 
     const totalPages = Math.ceil(total / pageSize);
 
@@ -134,7 +138,13 @@ const notifyParticipantsOfChanges = async (tripId, oldTrip, updatedTrip, creator
     const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
     if (participants.length > 0) {
       const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
-      console.log(`Notificaciones procesadas. Total: ${results.length}`);
+      
+      // Verificamos si results existe antes de leer .length
+      if (results && results.length) {
+          console.log(`✅ Notificaciones procesadas. Total enviadas/intentadas: ${results.length}`);
+      } else {
+          console.warn('⚠️ No se enviaron notificaciones (Revise GMAIL_USER en .env)');
+      }
     }
   } catch (error) {
     console.error('Error enviando notificaciones en segundo plano:', error);

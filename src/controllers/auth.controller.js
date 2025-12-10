@@ -38,37 +38,38 @@ const login = async (req, res) => {
 };
 
 const verify = async (req, res) => {
+  const frontendRedirectUrl = `${process.env.FRONTEND_URL || 'https://app-viajes.netlify.app'}/auth/verify`;
   const { token } = req.query;
-  if (!token) return res.status(400).send('Falta token');
+  if (!token) {
+    const errorMessage = encodeURIComponent('Falta token');
+    return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${errorMessage}`);
+  }
+
   try {
     const payload = jwt.verify(token, process.env.SECRET_KEY); 
     const userId = payload.userId;
-    // Esperar a que se implemente el verify_email en la BBDD
-    //await UsersModel.updateUser(userId, { verify_email: 1 });
-    const loginUrl = process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login` : 'http://localhost:4200/login';
-    res.send(`
-      <!doctype html>
-      <html lang="es">
-        <head>
-          <meta charset="utf-8" />
-          <title>Email verificado</title>
-          <meta http-equiv="refresh" content="2;url=${loginUrl}" />
-        </head>
-        <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 80px;">
-          <h1>Email verificado</h1>
-          <p>Tu correo ha sido verificado correctamente.</p>
-          <p>Seras redirigido al login en unos segundos...</p>
-          <p><a href="${loginUrl}">Ir al login ahora</a></p>
-          <script>
-            setTimeout(function () {
-              window.location.href = '${loginUrl}';
-            }, 2000);
-          </script>
-        </body>
-      </html>
-    `);
+    
+    // Comprobar si el usuario ya existe y si ya tiene el email verificado
+    const user = await UsersModel.selectById(userId);
+    if (!user) {
+      const errorMessage = encodeURIComponent('Usuario no encontrado');
+      return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${errorMessage}`);
+    }
+
+    if (!user.verified_email) {
+      await UsersModel.updateEmailVerified(userId);
+    }
+
+    // Emitir token de sesión para iniciar la sesión automáticamente en el front
+    const sessionToken = jwt.sign({ userId: user.id_user }, process.env.SECRET_KEY);
+
+    const successParams = `status=success&token=${encodeURIComponent(sessionToken)}`;
+    return res.redirect(302, `${frontendRedirectUrl}?${successParams}`);
   } catch (err) {
-    res.status(400).send('Token inválido o expirado');
+    const errorMessage = err.name === 'TokenExpiredError'
+      ? 'Token expirado'
+      : 'Token inválido';
+    return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent(errorMessage)}`);
   }
 };
 

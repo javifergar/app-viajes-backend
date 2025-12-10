@@ -2,6 +2,10 @@ const ParticipantsModel = require('../models/participants.model');
 const TripsModel = require('../models/trips.model');
 const jwt = require('jsonwebtoken');
 const UsersModel = require('../models/users.model');
+const { sendPendingRequestEmail } = require('../services/email.service');
+const path = require('path');
+const fs = require('fs');
+
 
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
@@ -96,6 +100,7 @@ const getMyCreatorRequests = async (req, res) => {
  * { "message": "Quiero unirme al viaje" }
  */
 const createParticipation = async (req, res) => {
+  console.log('👉 createParticipation INICIADO. Body:', req.body); // <--- LOG 1
   try {
     const { tripId } = req.params;
     const userId = req.user.id_user;
@@ -122,6 +127,7 @@ const createParticipation = async (req, res) => {
     const existing = await ParticipantsModel.selectByTripAndUser(tripId, userId);
 
     if (existing) {
+      console.log('⛔ Solicitud rechazada: Ya existe'); // <--- LOG 2
       return res.status(400).json({
         error: 'You already have a request for this trip',
       });
@@ -129,15 +135,31 @@ const createParticipation = async (req, res) => {
 
     // Insertar en la bbdd la solicitud de participación
     const insertId = await ParticipantsModel.insertParticipation(tripId, userId, message);
-
+console.log('✅ Participación insertada ID:', insertId); // <--- LOG 3
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
+console.log('📧 Intentando enviar email...'); // <--- LOG 4
+    // Enviar email al creador del viaje notificando nueva solicitud (en segundo plano)
+// En createParticipation
+  sendPendingRequestEmail(newParticipation)
+  .then((result) => {
+    // Si result es undefined, es que no había transporter configurado
+    if (result) {
+        console.log('✅ Email enviado correctamente:', insertId);
+    } else {
+        console.warn('⚠️ Email NO enviado (Faltan credenciales en .env):', insertId);
+    }
+  })
+  .catch(err => console.error('❌ Error enviando email:', insertId, err.message));
 
     return res.status(201).json(newParticipation);
+
+
   } catch (error) {
     console.error('Error in createParticipation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 /**
  * 6. CAMBIAR EL ESTADO DE UNA SOLICITUD/PARTICIPANTE
@@ -145,8 +167,8 @@ const createParticipation = async (req, res) => {
  * { "status": "accepted" }
  * { "status": "rejected" }
  * { "status": "left" }
- * { "status": "pending" }
- */
+  * { "status": "pending" }
+  */
 const updateParticipationStatus = async (req, res) => {
   try {
     const { participationId } = req.params;
@@ -222,6 +244,58 @@ const getParticipantsInfo = async (req, res) => {
   }
 };
 
+/**
+ * 8. BORRAR UNA PARTICIPACIÓN
+ * DELETE /api/participants/:participationId
+ * 
+ * Reglas:
+ * - Solo se puede borrar si la participación está en estado pending <-- comentado por el momento
+ * - Solo puede borrar el usuario que creó la participación (id_user)
+ */
+const deleteParticipation = async (req, res) => {
+  try {
+    const { participationId } = req.params;
+
+
+    const userId = req.user.id_user;
+
+
+    //Comprobar la participación
+    const participation = await ParticipantsModel.selectParticipationById(participationId);
+
+    if (!participation) {
+      return res.status(404).json({ message: 'Participation not found' });
+    }
+
+    // Comprobar que el estado sea pending
+    /*
+    if (participation.status !== 'pending') {
+      return res.status(400).json({
+        error: 'Only pending participations can be deleted',
+      });
+    }*/
+
+    //Comprobar que la participación pertenece al usuario que desea borrar
+    if (participation.id_user !== userId) {
+      return res.status(403).json({
+        error: 'You can only delete your own participations' + participation.id_user + 'ss' + userId,
+      });
+    }
+
+    // Borrado fisico
+    const affectedRows = await ParticipantsModel.deleteParticipation(participationId);
+
+
+    return res.json({
+      message: 'Participation deleted successfully',
+      participationId: Number(participationId),
+    });
+  } catch (error) {
+    console.error('Error in deleteParticipation:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // TESTING
 const getAllParticipations = async (req, res) => {
   try {
@@ -229,6 +303,53 @@ const getAllParticipations = async (req, res) => {
     res.json(users);
   } catch (error) {
     return res.status(500).json({ error: 'Error al obtener todos los participantes.' });
+  }
+};
+
+/**
+ * 9. ACEPTAR O RECHAZAR POR TOKEN (desde email)
+ * GET /api/participants/:participationId/action?token=JWT
+ */
+const handleParticipationAction = async (req, res) => {
+  // Define la URL base de tu frontend para la redirección
+  const frontendRedirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/requests`;
+
+  try {
+    const { participationId } = req.params;
+    const { token } = req.query;
+
+    if (!token) {
+      // Redirigir con mensaje de error si falta el token
+      return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent('Token requerido para la acción.')}`);
+    }
+
+    // 1. Verificar el Token
+    const { id_participation, action } = jwt.verify(token, process.env.SECRET_KEY);
+
+    if (id_participation !== parseInt(participationId) || !['accept', 'reject'].includes(action)) {
+      // Redirigir con mensaje de error si el token es inválido
+      return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent('Token inválido para esta solicitud.')}`);
+    }
+
+    // 2. Realizar la Acción (Actualizar DB)
+    const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+    await ParticipantsModel.updateParticipationStatus(participationId, newStatus);
+
+    // 3. Redirección Exitosa (302) al frontend con el resultado
+    // Enviamos el resultado como query params (ej: ?action=accept&status=success)
+    const successMessage = `action=${action}&status=success`;
+    return res.redirect(302, `${frontendRedirectUrl}?${successMessage}`);
+
+  } catch (error) {
+    let errorMsg = 'Error al procesar la solicitud';
+    if (error.name === 'TokenExpiredError') {
+      errorMsg = 'Token expirado. La solicitud no fue procesada.';
+    } else {
+      console.error('Error al manejar la acción de participación:', error);
+    }
+
+    // 4. Redirección con Error (general o expiración)
+    return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent(errorMsg)}`);
   }
 };
 
@@ -240,5 +361,7 @@ module.exports = {
   getMyCreatorRequests,
   createParticipation,
   updateParticipationStatus,
+  deleteParticipation,
   getAllParticipations,
+  handleParticipationAction,
 };
