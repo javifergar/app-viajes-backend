@@ -5,6 +5,7 @@ const { sendTripUpdateNotification } = require('../services/email.service');
 
 const getAllTrips = async (req, res) => {
   try {
+    await TripModel.refreshTripsStatus();
     const { status, destination, departure, start_date, end_date, creator, participant, participantStatus, sortBy, sortOrder, cost } = req.query;
     //const trips = await TripModel.selectTrips({ status, destination, departure, date, creator, participant, participantStatus });
 
@@ -31,6 +32,7 @@ const getAllTrips = async (req, res) => {
 const getTripById = async (req, res) => {
   try {
     const { tripId } = req.params;
+    await TripModel.refreshTripsStatus();
     const trip = await TripModel.tripsById(tripId);
 
     if (!trip) return res.status(404).json({ message: 'No existe este viaje' });
@@ -45,7 +47,7 @@ const getMyTripsAsParticipant = async (req, res) => {
   try {
     const userId = req.user.id_user;
     const participantStatus = req.query.participantStatus;
-
+    await TripModel.refreshTripsStatus();
     const trips = await TripModel.selectTrips({
       participant: userId,
       participantStatus,
@@ -61,7 +63,7 @@ const getMyTripsAsParticipant = async (req, res) => {
 const getMyTrips = async (req, res) => {
   try {
     const userId = req.user.id_user;
-
+    await TripModel.refreshTripsStatus();
     const trips = await TripModel.selectTrips({
       creatorId: userId,
     });
@@ -138,12 +140,12 @@ const notifyParticipantsOfChanges = async (tripId, oldTrip, updatedTrip, creator
     const participants = await ParticipantsModel.selectAcceptedParticipantsEmails(tripId);
     if (participants.length > 0) {
       const results = await sendTripUpdateNotification(participants, oldTrip, updatedTrip, creatorEmail);
-      
+
       // Verificamos si results existe antes de leer .length
       if (results && results.length) {
-          console.log(`✅ Notificaciones procesadas. Total enviadas/intentadas: ${results.length}`);
+        console.log(`✅ Notificaciones procesadas. Total enviadas/intentadas: ${results.length}`);
       } else {
-          console.warn('⚠️ No se enviaron notificaciones (Revise GMAIL_USER en .env)');
+        console.warn('⚠️ No se enviaron notificaciones (Revise GMAIL_USER en .env)');
       }
     }
   } catch (error) {

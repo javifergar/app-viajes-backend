@@ -186,4 +186,28 @@ const deleteTrip = async (tripId) => {
   return result;
 };
 
-module.exports = { selectTrips, selectTripsPaginated, tripsById, insertTrip, updateTrip, deleteTrip };
+const refreshTripsStatus = async () => {
+  await db.query(
+    `UPDATE trips
+     SET status = 'completed'
+     WHERE end_date < CURDATE()
+       AND status <> 'completed'`
+  );
+
+  await db.query(
+    `UPDATE trips t
+     SET t.status = 'closed'
+     WHERE t.status = 'open'
+       AND t.end_date >= CURDATE()
+       AND t.max_participants IS NOT NULL
+       AND t.max_participants > 0
+       AND (
+         SELECT COUNT(*)
+         FROM trip_participants tp
+         WHERE tp.id_trip = t.id_trip
+           AND tp.status = 'accepted'
+       ) >= t.max_participants`
+  );
+};
+
+module.exports = { selectTrips, selectTripsPaginated, tripsById, insertTrip, updateTrip, deleteTrip, refreshTripsStatus };
