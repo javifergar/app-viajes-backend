@@ -19,8 +19,9 @@ const buildTripsFilterQuery = (filters = {}) => {
     params.push(`%${departure}%`);
   }
   if (destination) {
-    sql += ' and t.destination LIKE ?';
-    params.push(`%${destination}%`);
+    const term = `%${destination}%`;
+    sql += ` and (t.destination LIKE ? COLLATE utf8mb4_unicode_ci OR t.title LIKE ? COLLATE utf8mb4_unicode_ci)`;
+    params.push(term, term);
   }
   if (start_date) {
     sql += ' and t.start_date = ?';
