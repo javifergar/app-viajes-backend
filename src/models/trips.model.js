@@ -209,6 +209,14 @@ const refreshTripsStatus = async () => {
            AND tp.status = 'accepted'
        ) >= t.max_participants`
   );
+
+  await db.query(
+    `UPDATE trips
+     SET status = 'closed'
+     WHERE status = 'open'
+       AND start_date <= CURDATE()
+       AND end_date >= CURDATE()`
+  );
 };
 
 module.exports = { selectTrips, selectTripsPaginated, tripsById, insertTrip, updateTrip, deleteTrip, refreshTripsStatus };
