@@ -1,9 +1,8 @@
 const MessagesModel = require('../models/messages.model');
 
-
 /**
  * 1. Obtener mensajes de un viaje (lista plana)
- * GET /api/messages/trip/:trip_id
+ * GET /api/trips/:tripId/messages
  */
 const getMessagesByTrip = async (req, res) => {
   try {
@@ -29,33 +28,29 @@ const getMessagesTreeByTrip = async (req, res) => {
     const map = new Map();
     const three = [];
 
-
     const messages = await MessagesModel.selectMessagesByTrip(tripId);
 
     // nodos base
     messages.forEach((msg) => {
-        map.set(msg.id_message, { ...msg, replies: [] });
+      map.set(msg.id_message, { ...msg, replies: [] });
     });
 
     //   padres y hijos
     messages.forEach((msg) => {
-        const node = map.get(msg.id_message);
+      const node = map.get(msg.id_message);
 
-        if (msg.id_parent_message && map.has(msg.id_parent_message)) {
+      if (msg.id_parent_message && map.has(msg.id_parent_message)) {
         const parentNode = map.get(msg.id_parent_message);
         parentNode.replies.push(node);
-        } else {
-        
+      } else {
         three.push(node);
-        }
+      }
     });
 
-
     return res.json(three);
-
   } catch (error) {
-        console.error('Error al generar arbol', error);
-        return res.status(500).json({ error: 'Internal server error' });
+    console.error('Error al generar arbol', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -91,22 +86,35 @@ const createMessage = async (req, res) => {
   try {
     const userId = req.user.id_user;
     const { tripId } = req.params;
-    const { content, parent_message_id } = req.body;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ error: 'Content is required' });
+    const { message, id_parent_message = null } = req.body;
+
+    if (!message || message.trim() === '') {
+      return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
     }
 
+    if (message.length > 1000) {
+      return res.status(400).json({ error: 'Mensaje máximo 1000 caracteres' });
+    }
+
+    if (id_parent_message !== null && id_parent_message !== undefined) {
+      const parent = await MessagesModel.selectMessageById(id_parent_message);
+
+      if (!parent) return res.status(404).json({ error: 'Mensaje padre no encontrado' });
+
+      if (Number(parent.id_trip) !== Number(tripId)) {
+        return res.status(400).json({ error: 'El mensaje padre no pertenece a este viaje' });
+      }
+    }
 
     const insertId = await MessagesModel.insertMessage({
       id_trip: tripId,
       id_author: userId,
-      id_parent_message: parent_message_id || null,
-      content,
+      id_parent_message: id_parent_message ?? null,
+      content: message,
     });
 
     const newMessage = await MessagesModel.selectMessageById(insertId);
-
     return res.status(201).json(newMessage);
   } catch (error) {
     console.error('Error in createMessage:', error);
@@ -149,7 +157,7 @@ const updateMessage = async (req, res) => {
 };
 
 /**
- * 6. Borrar un mensaje 
+ * 6. Borrar un mensaje
  * DELETE /api/messages/:message_id
  *
  * Si no tiene hijos: DELETE total de la fila
@@ -157,33 +165,27 @@ const updateMessage = async (req, res) => {
  */
 const deleteMessage = async (req, res) => {
   try {
+    const userId = req.user.id_user;
     const { messageId } = req.params;
 
     const existing = await MessagesModel.selectMessageById(messageId);
     if (!existing) {
-      return res.status(404).json({ message: 'Message not found' });
+      return res.status(404).json({ error: 'Mensaje no encontrado' });
+    }
+
+    if (Number(existing.id_user) !== Number(userId)) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar este mensaje' });
     }
 
     const children = await MessagesModel.hasChildren(messageId);
 
     if (children) {
-      // Borrado lógico
       await MessagesModel.softDeleteMessage(messageId);
-      const updated = await MessagesModel.selectMessageById(messageId);
-
-      return res.json({
-        deleteType: 'soft',
-        message: updated,
-      });
     } else {
-      // Borrado físico
       await MessagesModel.deleteMessageHard(messageId);
-
-      return res.json({
-        deleteType: 'hard',
-        message: existing,
-      });
     }
+
+    return res.status(200).json({ message: 'Mensaje borrado:', deleted: existing });
   } catch (error) {
     console.error('Error in deleteMessage:', error);
     return res.status(500).json({ error: 'Internal server error' });
