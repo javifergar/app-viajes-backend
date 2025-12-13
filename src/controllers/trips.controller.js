@@ -85,7 +85,7 @@ const createTrip = async (req, res) => {
     // Crear participación automática del creador del viaje
     const existing = await ParticipantsModel.selectByTripAndUser(insertId, creatorId);
     if (!existing) {
-      await ParticipantsModel.insertParticipation(insertId, creatorId, 'Creator auto-join', 'accepted');
+      await ParticipantsModel.insertParticipation(insertId, creatorId, 'Creador', 'accepted');
     }
 
     const trip = await TripModel.tripsById(insertId);
