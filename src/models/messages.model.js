@@ -1,38 +1,57 @@
 // Define your model here
 const db = require('../config/db');
 
-/*
- *  Obtener un mensaje por id
+/**
+ * Mensaje por id con el formato que espera el frontend
  */
 const selectMessageById = async (messageId) => {
-  const [result] = await db.query(
+  const [rows] = await db.query(
     `
-      SELECT *
-      FROM trip_messages
-      WHERE id_message = ?
+    SELECT
+      m.id_message,
+      m.id_trip,
+      m.id_author AS id_user,
+      u.name AS user_name,
+      m.content AS message,
+      DATE_FORMAT(CONVERT_TZ(m.created_at, @@session.time_zone, '+00:00'), '%Y-%m-%d %H:%i:%s') AS created_at,
+      m.id_parent_message,
+      pm.content AS parent_message
+    FROM trip_messages m
+    JOIN users u ON u.id_user = m.id_author
+    LEFT JOIN trip_messages pm ON pm.id_message = m.id_parent_message
+    WHERE m.id_message = ?
     `,
     [messageId]
   );
 
-  if (result.length === 0) return null;
-  return result[0];
+  return rows.length ? rows[0] : null;
 };
 
-/*
- * Obtener todos los mensajes de un viaje   
+/**
+ * Todos los mensajes de un viaje (flat), ordenados ASC
  */
 const selectMessagesByTrip = async (tripId) => {
-  const [result] = await db.query(
+  const [rows] = await db.query(
     `
-      SELECT *
-      FROM trip_messages
-      WHERE id_trip = ?
-      ORDER BY created_at ASC
+    SELECT
+      m.id_message,
+      m.id_trip,
+      m.id_author AS id_user,
+      u.name AS user_name,
+      m.content AS message,
+      DATE_FORMAT(CONVERT_TZ(m.created_at, @@session.time_zone, '+00:00'), '%Y-%m-%d %H:%i:%s') AS created_at,
+      m.id_parent_message,
+      pm.content AS parent_message
+    FROM trip_messages m
+    JOIN users u ON u.id_user = m.id_author
+    LEFT JOIN trip_messages pm ON pm.id_message = m.id_parent_message
+    WHERE m.id_trip = ?
+    ORDER BY m.created_at ASC
     `,
     [tripId]
   );
 
-  return result; 
+  return rows;
 };
 
 /*
@@ -100,7 +119,7 @@ const deleteMessageHard = async (messageId) => {
 };
 
 /**
- * Borrado lógico 
+ * Borrado lógico
  *    (para los mensajes que tienen hijos)
  *  Update y  Se pone 'deleted mensaje'
  */

@@ -2,7 +2,13 @@ const jwt = require('jsonwebtoken');
 const usersModel = require('../models/users.model.js');
 
 const checkToken = async (req, res, next) => {
-  const token = req.headers['authorization'];
+  const auth = req.headers['authorization'];
+
+  if (!auth) {
+    return res.status(403).json({ message: 'Debes incluir el header Authorization' });
+  }
+
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
 
   if (!token) {
     return res.status(403).json({ message: 'Debes incluir el header Authorization' });
