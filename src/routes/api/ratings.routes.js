@@ -9,7 +9,7 @@ router.get('/trip/:tripId', checkTripExists, ratings.getRatingsByTrip);
 router.get('/user/:userId', ratings.getRatingsByUserId);
 
 // Crear una valoración tras finalizar un viaje
-router.post('/', checkTripExists, ratings.createRating);
+router.post('/', ratings.createRating);
 
 // Editar la valoración realizada por el usuario autenticado
 router.patch('/:ratingId', ratings.updateRating);

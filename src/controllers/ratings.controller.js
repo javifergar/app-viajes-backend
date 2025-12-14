@@ -1,6 +1,6 @@
 const RatingsModel = require('../models/ratings.model');
 /**
- * Se obtiene las valoraciones recibidas en un viaje por ID. 
+ * Se obtiene las valoraciones recibidas en un viaje por ID.
  * @returns {*} Devuelve un array de JSON con las valoraciones del viaje
  */
 const getRatingsByTrip = async (req, res) => {
@@ -9,16 +9,16 @@ const getRatingsByTrip = async (req, res) => {
     const ratings = await RatingsModel.selectByTrip(tripId);
     res.json(ratings);
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Error al obtener las valoraciones del viaje' ,
-      message: error.message  
+    res.status(500).json({
+      error: 'Error al obtener las valoraciones del viaje',
+      message: error.message,
     });
   }
 };
 
 /**
  * Se obtiene todas las valoraciones de un usuario (ID).
- * @returns {*} Devuelve un array de JSON con las valoraciones al usuario. 
+ * @returns {*} Devuelve un array de JSON con las valoraciones al usuario.
  */
 const getRatingsByUserId = async (req, res) => {
   try {
@@ -26,56 +26,66 @@ const getRatingsByUserId = async (req, res) => {
     const ratings = await RatingsModel.selectForUser(userId);
     res.json(ratings);
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al obtener las valoraciones del usuario',
-      message: error.message 
+      message: error.message,
     });
   }
 };
 
-
 /**
- * Se crea una valoracion asociada a un viaje, realizada por usuario a otro. 
- * @returns Devuelve la valoración realizada. 
+ * Se crea una valoracion asociada a un viaje, realizada por usuario a otro.
+ * @returns Devuelve la valoración realizada.
  */
 const createRating = async (req, res) => {
   try {
-    const { id_trip, id_reviewed, score, comment } = req.body;
+    let { id_trip, id_reviewed, score, comment } = req.body;
 
-    const id_reviewer = req.user.id_user;
-
+    const id_reviewer = req.user?.id_user;
     if (!id_reviewer) {
-      return res.status(401).json({ message: 'Usuario no autenticado' });
+      return res.status(401).json({ message: 'Usuario no autenticado (token faltante o inválido)' });
     }
 
-    if (id_reviewer === id_reviewed) {
+    if (Number(id_reviewer) === Number(id_reviewed)) {
       return res.status(400).json({ message: 'No puedes valorarte a ti mismo' });
     }
 
     if (id_trip === undefined || id_reviewed === undefined || score === undefined) {
       return res.status(400).json({ message: 'Faltan campos obligatorios: id_trip, id_reviewed, score' });
     }
-    if (Number.isNaN(Number(score)) || score < 0 || score > 10) {
-      return res.status(400).json({ message: 'El campo score debe estar entre 0 y 10' });
+
+    const scoreNum = Number(score);
+
+    if (!Number.isInteger(scoreNum) || scoreNum < 1 || scoreNum > 10) {
+      return res.status(400).json({ message: 'El campo score debe ser un entero entre 1 y 10' });
     }
 
-    // Comprobar que ambos están en el mismo viaje
     const bothInTrip = await RatingsModel.checkUsersBelongToTrip(id_trip, id_reviewer, id_reviewed);
-
     if (!bothInTrip) {
       return res.status(403).json({
         message: 'Solo puedes valorar a usuarios que han participado en el mismo viaje que tú',
       });
     }
 
-    const insertId = await RatingsModel.insertRating({ id_trip, id_reviewer, id_reviewed, score, comment });
+    const insertId = await RatingsModel.insertRating({
+      id_trip,
+      id_reviewer,
+      id_reviewed,
+      score: scoreNum,
+      comment: comment || null,
+    });
+
     const newRating = await RatingsModel.selectById(insertId);
-    res.status(201).json(newRating);
+    return res.status(201).json(newRating);
   } catch (error) {
+    console.error('createRating error:', error);
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Ya existe una valoración para este viaje y usuario' });
     }
-    res.status(500).json({ error: 'Error al crear la valoración' });
+    return res.status(500).json({
+      error: 'Error al crear la valoración',
+      message: error.message,
+    });
   }
 };
 
@@ -105,7 +115,7 @@ const updateRating = async (req, res) => {
     if (affectedRows === 0) return res.status(400).json({ message: 'No hay campos válidos para actualizar' });
 
     const updated = await RatingsModel.selectById(ratingId);
-    
+
     res.json(updated);
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -135,13 +145,12 @@ const deleteRating = async (req, res) => {
 
     const success = await RatingsModel.deleteRating(ratingId);
     if (!success) return res.status(500).json({ error: 'No se pudo borrar la valoración' });
-   
+
     res.json({ message: 'Valoración eliminada correctamente' });
   } catch (error) {
     console.error('Error eliminando valoración:', error);
     res.status(500).json({ error: 'Error al eliminar la valoración' });
   }
 };
-
 
 module.exports = { getRatingsByTrip, getRatingsByUserId, createRating, updateRating, deleteRating };
