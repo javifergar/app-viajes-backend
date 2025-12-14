@@ -1,9 +1,7 @@
-
 const UsersModel = require('../models/users.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const {sendVerifyEmailTo} = require('../services/email.service');
-
+const { sendVerifyEmailTo } = require('../services/email.service');
 
 const create = async (req, res) => {
   const findEmail = await UsersModel.selectByEmail(req.body.email);
@@ -13,9 +11,25 @@ const create = async (req, res) => {
   try {
     const insertId = await UsersModel.insertUser(req.body);
     const newUser = await UsersModel.selectById(insertId);
-    //Se envía en la creación el correo de verificación
-    await sendVerifyEmailTo(newUser);
-    res.json(newUser);
+
+    res.status(201).json({
+      message: 'Usuario creado. Revisa tu correo para verificar.',
+      user: newUser,
+    });
+
+    // Enviar email de verificación en segundo plano (sin bloquear la respuesta)
+    sendVerifyEmailTo(newUser)
+      .then((result) => {
+        if (result.success) {
+          console.log('✅ Email de verificación enviado a:', result.email);
+        } else {
+          console.warn('⚠️ Email de verificación NO enviado. Razón:', result.reason);
+        }
+      })
+      .catch((err) => {
+        console.error('❌ Error enviando email de verificación:', err.message);
+      });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Error al insertar el nuevo usuario!' });
@@ -46,9 +60,9 @@ const verify = async (req, res) => {
   }
 
   try {
-    const payload = jwt.verify(token, process.env.SECRET_KEY); 
+    const payload = jwt.verify(token, process.env.SECRET_KEY);
     const userId = payload.userId;
-    
+
     // Comprobar si el usuario ya existe y si ya tiene el email verificado
     const user = await UsersModel.selectById(userId);
     if (!user) {
@@ -66,13 +80,9 @@ const verify = async (req, res) => {
     const successParams = `status=success&token=${encodeURIComponent(sessionToken)}`;
     return res.redirect(302, `${frontendRedirectUrl}?${successParams}`);
   } catch (err) {
-    const errorMessage = err.name === 'TokenExpiredError'
-      ? 'Token expirado'
-      : 'Token inválido';
+    const errorMessage = err.name === 'TokenExpiredError' ? 'Token expirado' : 'Token inválido';
     return res.redirect(302, `${frontendRedirectUrl}?status=error&message=${encodeURIComponent(errorMessage)}`);
   }
 };
-
-
 
 module.exports = { login, create, verify };
