@@ -1,31 +1,30 @@
 const path = require('path');
-const nodemailer = require('nodemailer');
-const fs = require('fs/promises'); // Usamos promesas para no bloquear el hilo
-const { formatDate } = require('../utils/utils/date.utils');
+const brevo = require('@getbrevo/brevo');
+const fs = require('fs/promises');
+const { formatDate } = require('../utils/utils/date.utils'); 
 const jwt = require('jsonwebtoken');
 const TripsModel = require('../models/trips.model');
 const UsersModel = require('../models/users.model');
 require('dotenv').config();
 
-
 // ================= CONFIGURACIÓN =================
-// Configuración del Transporter (Brevo SMTP)
-let transporter = null;
-if (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_KEY) {
-    transporter = nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        auth: {
-            user: process.env.BREVO_SMTP_USER,
-            pass: process.env.BREVO_SMTP_KEY,
-        },
-    });
-    console.log('✅ Transporter de Brevo configurado correctamente');
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const FROM_EMAIL = 'appviajesunir@gmail.com'; 
+const FROM_NAME = 'Viajes Compartidos';
+
+let apiInstance = null;
+if (BREVO_API_KEY) {
+    apiInstance = new brevo.TransactionalEmailsApi();
+    apiInstance.setApiKey(
+        brevo.TransactionalEmailsApiApiKeys.apiKey, 
+        BREVO_API_KEY
+    );
+    console.log('✅ Brevo configurado correctamente');
 } else {
-    console.warn("⚠️ No se han configurado credenciales de Brevo. Los emails no se enviarán.");
+    console.error('⚠️ BREVO_API_KEY no configurada');
 }
 
-// Helper para leer plantillas HTML de forma asíncrona
+// Helper para leer plantillas HTML
 const loadTemplate = async (templateName) => {
     const templatePath = path.join(__dirname, `../templates/${templateName}`);
     return await fs.readFile(templatePath, 'utf-8');
@@ -35,43 +34,59 @@ const loadTemplate = async (templateName) => {
 
 // 1. Verificación de Email
 const sendVerifyEmailTo = async (userData) => {
-    if (!transporter) return;
+    if (!apiInstance) {
+        console.warn('⚠️ Brevo no configurado');
+        return { success: false, reason: 'Brevo not configured' };
+    }
 
     try {
-        const htmlTemplate = await loadTemplate('verify.html'); // Lectura asíncrona
-
+        const htmlTemplate = await loadTemplate('verify.html');
         const token = jwt.sign({ userId: userData.id_user }, process.env.SECRET_KEY, { expiresIn: '1d' });
-
-        // Este link apunta al BACKEND, el cual debe hacer res.redirect() al FRONTEND
         const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
         const verificationLink = `${apiBaseUrl}/api/auth/verify?token=${token}`;
-
         const html = htmlTemplate.replace(/{{verificationLink}}/g, verificationLink);
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_FROM || 'Viajes Compartidos <appviajesunir@gmail.com>',
-            to: userData.email,
-            subject: 'Verificación de email - Viajes Compartidos',
-            html: html,
-        });
+        const sendSmtpEmail = new brevo.SendSmtpEmail();
+        sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
+        sendSmtpEmail.to = [{ email: userData.email, name: userData.name }];
+        sendSmtpEmail.subject = 'Verificación de email - Viajes Compartidos';
+        sendSmtpEmail.htmlContent = html;
+
+        await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log(`✅ Email de verificación enviado a ${userData.email}`);
+        return { success: true, email: userData.email };
     } catch (error) {
-        console.error('❌ Error sending verification email:', error);
+        console.error('❌ Error enviando email:', error.response?.body || error.message);
+        return { success: false, reason: error.message };
     }
 };
 
 // 2. Notificación de Cambio de Fechas
 const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, creatorEmail) => {
-    if (!transporter || participants.length === 0) return;
+    if (!apiInstance) {
+        console.warn('⚠️ Brevo no configurado');
+        return { sent: 0, failed: 0, total: 0 };
+    }
+    
+    if (participants.length === 0) {
+        return { sent: 0, failed: 0, total: 0 };
+    }
 
     try {
         const htmlTemplate = await loadTemplate('datesModified.html');
-
         const frontendUrl = process.env.FRONTEND_URL || 'https://app-viajes.netlify.app';
         const tripDetailsUrl = `${frontendUrl}/trips/${updatedTrip.id_trip}`;
 
-        const emailPromises = participants.map(participant => {
-            if (participant.email === creatorEmail) return Promise.resolve();
+        const recipientsToNotify = participants.filter(p => p.email !== creatorEmail);
 
+        if (recipientsToNotify.length === 0) {
+            console.log('ℹ️ No hay participantes a notificar');
+            return { sent: 0, failed: 0, total: 0 };
+        }
+
+        console.log(`📧 Enviando ${recipientsToNotify.length} notificaciones con Brevo...`);
+
+        const emailPromises = recipientsToNotify.map(async (participant) => {
             let html = htmlTemplate
                 .replace(/{{participantName}}/g, participant.name)
                 .replace(/{{tripTitle}}/g, updatedTrip.title)
@@ -81,23 +96,46 @@ const sendTripUpdateNotification = async (participants, oldTrip, updatedTrip, cr
                 .replace(/{{oldEndDate}}/g, formatDate(oldTrip.end_date))
                 .replace(/{{tripDetailsUrl}}/g, tripDetailsUrl);
 
-            return transporter.sendMail({
-                from: process.env.EMAIL_FROM || 'Viajes Compartidos <appviajesunir@gmail.com>',
-                to: participant.email,
-                subject: `⚠️ Cambio de fechas: ${updatedTrip.title}`,
-                html: html,
-            });
+            const sendSmtpEmail = new brevo.SendSmtpEmail();
+            sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
+            sendSmtpEmail.to = [{ email: participant.email, name: participant.name }];
+            sendSmtpEmail.subject = `⚠️ Cambio de fechas: ${updatedTrip.title}`;
+            sendSmtpEmail.htmlContent = html;
+
+            return apiInstance.sendTransacEmail(sendSmtpEmail);
         });
 
-        return Promise.allSettled(emailPromises);
+        const results = await Promise.allSettled(emailPromises);
+
+        const successful = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected');
+
+        if (failed.length > 0) {
+            console.error(`❌ ${failed.length} emails fallaron:`, 
+                failed.map(f => f.reason?.response?.body || f.reason?.message || 'Error desconocido')
+            );
+        }
+
+        console.log(`✅ Notificaciones: ${successful}/${results.length} enviadas`);
+
+        return {
+            sent: successful,
+            failed: failed.length,
+            total: results.length
+        };
+
     } catch (error) {
-        console.error('❌ Error preparing update emails:', error);
+        console.error('❌ Error crítico:', error.response?.body || error.message);
+        return { sent: 0, failed: 0, total: 0 };
     }
 };
 
-// 3. Solicitud Pendiente (Aceptar/Rechazar)
+// 3. Solicitud Pendiente
 const sendPendingRequestEmail = async (newParticipation) => {
-    if (!transporter) return;
+    if (!apiInstance) {
+        console.warn('⚠️ Brevo no configurado');
+        return { success: false, reason: 'Brevo API not configured' };
+    }
 
     try {
         const { id_participation, id_trip, id_user, message } = newParticipation;
@@ -106,12 +144,15 @@ const sendPendingRequestEmail = async (newParticipation) => {
         const trip = await TripsModel.tripsById(id_trip);
 
         if (!participant || !trip) {
-            console.error('Missing data for email');
-            return;
+            console.error('❌ Faltan datos de participante o viaje');
+            return { success: false, reason: 'Missing participant or trip data' };
         }
 
         const creator = await UsersModel.selectById(trip.id_creator);
-        if (!creator) return;
+        if (!creator) {
+            console.error('❌ Creator not found');
+            return { success: false, reason: 'Creator not found' };
+        }
 
         let html = await loadTemplate('pendingRequest.html');
 
@@ -120,11 +161,7 @@ const sendPendingRequestEmail = async (newParticipation) => {
 
         const acceptToken = jwt.sign({ id_participation, action: 'accepted' }, process.env.SECRET_KEY, { expiresIn: '7d' });
         const rejectToken = jwt.sign({ id_participation, action: 'rejected' }, process.env.SECRET_KEY, { expiresIn: '7d' });
-
-        // NOTA: Estos enlaces también apuntan al BACKEND.
-        // El endpoint /api/participants/.../action debe hacer res.redirect() al FRONTEND
-        // Ejemplo: res.redirect(`${frontendUrl}/requests?status=success`)
-
+        
         html = html
             .replace(/{{creatorName}}/g, creator.name)
             .replace(/{{userName}}/g, participant.name)
@@ -136,15 +173,18 @@ const sendPendingRequestEmail = async (newParticipation) => {
             .replace(/{{accepted}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${acceptToken}`)
             .replace(/{{rejected}}/g, `${apiBaseUrl}/api/participants/${id_participation}/action?token=${rejectToken}`);
 
-        return transporter.sendMail({
-            from: process.env.EMAIL_FROM || 'Viajes Compartidos <appviajesunir@gmail.com>',
-            to: creator.email,
-            subject: `📨 ${participant.name} solicita unirse a tu viaje`,
-            html: html,
-        });
+        const sendSmtpEmail = new brevo.SendSmtpEmail();
+        sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
+        sendSmtpEmail.to = [{ email: creator.email, name: creator.name }];
+        sendSmtpEmail.subject = `📨 ${participant.name} solicita unirse a tu viaje`;
+        sendSmtpEmail.htmlContent = html;
+
+        await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log(`✅ Email enviado a ${creator.email}`);
+        return { success: true, email: creator.email };
     } catch (error) {
-        console.error('❌ Error sending pending request email:', error.message);
-        throw error;
+        console.error('❌ Error:', error.response?.body || error.message);
+        return { success: false, reason: error.message };
     }
 };
 
