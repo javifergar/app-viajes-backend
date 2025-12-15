@@ -14,7 +14,7 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
   const { userId } = req.params;
   const user = await UsersModel.selectById(userId);
-  //delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada. Comento la linea hasta que averiguemos como modificar el usuario por completo de una manera segura
+  delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada. Comento la linea hasta que averiguemos como modificar el usuario por completo de una manera segura
   if (!user) return res.status(404).json({ message: 'Id Usuario no existe' });
   res.json(user);
 };
@@ -22,71 +22,78 @@ const getById = async (req, res) => {
 const getByEmail = async (req, res) => {
   const { email } = req.params;
   const user = await UsersModel.selectByEmail(email);
- // delete user.password;
+  delete user.password;
   if (!user) return res.status(404).json({ message: 'Email incorrecto o no existe' });
   res.json(user);
 };
 
 const update = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const userData = req.body; 
-        if (userData.password) {
-            const user = await UsersModel.selectById(userId);
-            if (!user) {
-                return res.status(404).json({ message: 'Id de Usuario no existe' });
-            }
-            const isSame = await bcrypt.compare(userData.password, user.password);
-            if (isSame) {
-                return res.status(400).json({ message: 'Contraseña igual a la anterior' });
-            }
-            const salt = await bcrypt.genSalt(10);
-            userData.password = await bcrypt.hash(userData.password, salt);
-        }
-        const affectedRows = await UsersModel.updateUser(userId, userData);
-        if (affectedRows === 0) {
-            return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
-        }
-        const userModified = await UsersModel.selectById(userId);
-       // delete userModified.password; 
-        res.json(userModified);
-    } catch (error) {
-        console.error('Error al modificar el usuario:', error);
-        return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
+  try {
+    const { userId } = req.params;
+    const userData = req.body;
+    const tokenUserId = req.user.id_user;
+    const paramUserId = Number(req.params.userId);
+
+    if (tokenUserId !== paramUserId) {
+      return res.status(403).json({
+        message: 'No tienes permiso para modificar este usuario',
+      });
     }
+    if (userData.password) {
+      const user = await UsersModel.selectById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Id de Usuario no existe' });
+      }
+      const isSame = await bcrypt.compare(userData.password, user.password);
+      if (isSame) {
+        return res.status(400).json({ message: 'Contraseña igual a la anterior' });
+      }
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(userData.password, salt);
+    }
+    const affectedRows = await UsersModel.updateUser(userId, userData);
+    if (affectedRows === 0) {
+      return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
+    }
+    const userModified = await UsersModel.selectById(userId);
+    delete userModified.password;
+    res.json(userModified);
+  } catch (error) {
+    console.error('Error al modificar el usuario:', error);
+    return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
+  }
 };
 
 const updateAllUser = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const userData = req.body;
+  try {
+    const { userId } = req.params;
+    const userData = req.body;
 
-        if (userData.password) {
-            const user = await UsersModel.selectById(userId);
-            if (!user) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
-            
-            const isMatch = await bcrypt.compare(userData.password, user.password);
+    if (userData.password) {
+      const user = await UsersModel.selectById(userId);
+      if (!user) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
 
-            if (isMatch) {
-                userData.password = user.password;
-            } else {
-                const salt = await bcrypt.genSalt(10);
-                userData.password = await bcrypt.hash(userData.password, salt);
-            }
-        }
+      const isMatch = await bcrypt.compare(userData.password, user.password);
 
-        const affectedRows = await UsersModel.updateAllUser(userId, userData);
-
-        if (affectedRows === 0) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
-        
-        const userModified = await UsersModel.selectById(userId);
-        //delete userModified.password;
-        res.json(userModified);
-
-    } catch (error) {
-        console.error('Error al modificar el usuario:', error);
-        return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
+      if (isMatch) {
+        userData.password = user.password;
+      } else {
+        const salt = await bcrypt.genSalt(10);
+        userData.password = await bcrypt.hash(userData.password, salt);
+      }
     }
+
+    const affectedRows = await UsersModel.updateAllUser(userId, userData);
+
+    if (affectedRows === 0) return res.status(404).json({ message: 'Id de Usuario no existe o no hay campos para modificar' });
+
+    const userModified = await UsersModel.selectById(userId);
+    delete userModified.password;
+    res.json(userModified);
+  } catch (error) {
+    console.error('Error al modificar el usuario:', error);
+    return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
+  }
 };
 
 const remove = async (req, res) => {

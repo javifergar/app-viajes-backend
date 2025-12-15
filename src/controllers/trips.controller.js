@@ -7,7 +7,6 @@ const getAllTrips = async (req, res) => {
   try {
     await TripModel.refreshTripsStatus();
     const { status, destination, departure, start_date, end_date, creator, participant, participantStatus, sortBy, sortOrder, cost } = req.query;
-    //const trips = await TripModel.selectTrips({ status, destination, departure, date, creator, participant, participantStatus });
 
     let page = parseInt(req.query.page, 10) || 1;
     let pageSize = parseInt(req.query.pageSize, 10) || 10;
@@ -82,7 +81,6 @@ const createTrip = async (req, res) => {
 
     const { insertId } = await TripModel.insertTrip(data);
 
-    // Crear participación automática del creador del viaje
     const existing = await ParticipantsModel.selectByTripAndUser(insertId, creatorId);
     if (!existing) {
       await ParticipantsModel.insertParticipation(insertId, creatorId, 'Creador', 'accepted');
@@ -101,9 +99,8 @@ const updateTrip = async (req, res) => {
   try {
     const { tripId } = req.params;
     const creatorId = req.user.id_user;
-    const creatorEmail = req.user.email; // Asegúrate de que el middleware auth te da el email
+    const creatorEmail = req.user.email;
 
-    // 1. Validaciones iniciales
     const oldTrip = await TripModel.tripsById(tripId);
     if (!oldTrip) {
       return res.status(404).json({ message: 'No existe este viaje' });
@@ -112,17 +109,13 @@ const updateTrip = async (req, res) => {
       return res.status(403).json({ message: 'No puedes modificar un viaje si no eres el creador' });
     }
 
-    // 2. Actualización en BBDD
     await TripModel.updateTrip(tripId, req.body);
     const updatedTrip = await TripModel.tripsById(tripId);
 
-    // 3. Lógica de Notificación (Desacoplada)
     if (hasDateChanged(oldTrip, updatedTrip)) {
-      // Ejecutamos en "background" sin await para no bloquear la respuesta al usuario
       notifyParticipantsOfChanges(tripId, oldTrip, updatedTrip, creatorEmail);
     }
 
-    // 4. Respuesta inmediata
     res.json({
       message: 'Viaje modificado correctamente',
       viaje_anterior: oldTrip,
