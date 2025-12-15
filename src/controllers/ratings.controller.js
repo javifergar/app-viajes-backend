@@ -33,6 +33,20 @@ const getRatingsByUserId = async (req, res) => {
   }
 };
 
+const getMyRatingsForTrip = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+    const reviewerId = req.user.id_user;
+
+    const ratings = await RatingsModel.selectMyRatingsForTrip(tripId, reviewerId);
+
+    res.json(ratings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener mis valoraciones' });
+  }
+};
+
 /**
  * Se crea una valoracion asociada a un viaje, realizada por usuario a otro.
  * @returns Devuelve la valoración realizada.
@@ -153,4 +167,4 @@ const deleteRating = async (req, res) => {
   }
 };
 
-module.exports = { getRatingsByTrip, getRatingsByUserId, createRating, updateRating, deleteRating };
+module.exports = { getRatingsByTrip, getRatingsByUserId, getMyRatingsForTrip, createRating, updateRating, deleteRating };
