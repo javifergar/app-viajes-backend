@@ -5,7 +5,7 @@ const users = require('../../controllers/users.controller');
 router.get('/', users.getAll);
 router.get('/:userId', users.getById);
 router.get('/email/:email', users.getByEmail);
-router.patch('/:userId', users.update);
+//router.patch('/:userId', users.update);
 router.put('/:userId', users.update);
 router.delete('/:userId', users.remove);
 
