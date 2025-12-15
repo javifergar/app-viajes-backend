@@ -30,6 +30,16 @@ const selectById = async (ratingId) => {
   return result[0] || null;
 };
 
+const selectMyRatingsForTrip = async (id_trip, id_reviewer) => {
+  const [rows] = await db.query(
+    `SELECT id_reviewed, score, comment
+     FROM ratings
+     WHERE id_trip = ? AND id_reviewer = ?`,
+    [id_trip, id_reviewer]
+  );
+  return rows;
+};
+
 /**
  * Inserta una nueva valoración.
  * @param {Object} ratingData - Datos de la valoración.
@@ -80,7 +90,6 @@ const deleteRating = async (ratingId) => {
   return result.affectedRows === 1;
 };
 
-
 /**
  * Comprueba si dos usuarios (reviewer y reviewed) pertenecen al mismo viaje.
  * Pueden ser el creador del viaje o participantes aceptados.
@@ -117,6 +126,7 @@ const checkUsersBelongToTrip = async (id_trip, id_reviewer, id_reviewed) => {
 module.exports = {
   selectByTrip,
   selectForUser,
+  selectMyRatingsForTrip,
   selectById,
   insertRating,
   updateRating,
