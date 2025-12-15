@@ -31,7 +31,14 @@ const update = async (req, res) => {
   try {
     const { userId } = req.params;
     const userData = req.body;
+    const tokenUserId = req.user.id_user;
+    const paramUserId = Number(req.params.userId);
 
+    if (tokenUserId !== paramUserId) {
+      return res.status(403).json({
+        message: 'No tienes permiso para modificar este usuario',
+      });
+    }
     if (userData.password) {
       const user = await UsersModel.selectById(userId);
       if (!user) {
