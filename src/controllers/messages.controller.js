@@ -12,7 +12,6 @@ const getMessagesByTrip = async (req, res) => {
 
     return res.json(messages);
   } catch (error) {
-    console.error('Error in getMessagesByTrip:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -49,7 +48,6 @@ const getMessagesTreeByTrip = async (req, res) => {
 
     return res.json(three);
   } catch (error) {
-    console.error('Error al generar arbol', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -69,7 +67,6 @@ const getMessageById = async (req, res) => {
 
     return res.json(message);
   } catch (error) {
-    console.error('Error in getMessageById:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -117,7 +114,6 @@ const createMessage = async (req, res) => {
     const newMessage = await MessagesModel.selectMessageById(insertId);
     return res.status(201).json(newMessage);
   } catch (error) {
-    console.error('Error in createMessage:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -151,7 +147,6 @@ const updateMessage = async (req, res) => {
     const updated = await MessagesModel.selectMessageById(messageId);
     return res.json(updated);
   } catch (error) {
-    console.error('Error in updateMessage:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -187,7 +182,6 @@ const deleteMessage = async (req, res) => {
 
     return res.status(200).json({ message: 'Mensaje borrado:', deleted: existing });
   } catch (error) {
-    console.error('Error in deleteMessage:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

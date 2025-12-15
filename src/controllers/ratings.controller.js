@@ -42,7 +42,6 @@ const getMyRatingsForTrip = async (req, res) => {
 
     res.json(ratings);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Error al obtener mis valoraciones' });
   }
 };
@@ -92,7 +91,6 @@ const createRating = async (req, res) => {
     const newRating = await RatingsModel.selectById(insertId);
     return res.status(201).json(newRating);
   } catch (error) {
-    console.error('createRating error:', error);
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Ya existe una valoración para este viaje y usuario' });
     }
@@ -135,7 +133,6 @@ const updateRating = async (req, res) => {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Ya existe una valoración para este viaje y usuario' });
     }
-    console.error('Error actualizando valoración:', error);
     res.status(500).json({ error: 'Error al actualizar la valoración' });
   }
 };
@@ -162,7 +159,6 @@ const deleteRating = async (req, res) => {
 
     res.json({ message: 'Valoración eliminada correctamente' });
   } catch (error) {
-    console.error('Error eliminando valoración:', error);
     res.status(500).json({ error: 'Error al eliminar la valoración' });
   }
 };

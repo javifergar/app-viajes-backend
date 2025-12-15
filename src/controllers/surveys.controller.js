@@ -9,7 +9,6 @@ const getSurveysByTrip = async (req, res) => {
     const surveys = await SurveysModel.selectSurveysByTrip(tripId, userId);
     return res.json(surveys);
   } catch (e) {
-    console.error('getSurveysByTrip error:', e);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -49,7 +48,6 @@ const createSurvey = async (req, res) => {
 
     return res.status(201).json(created);
   } catch (e) {
-    console.error('createSurvey error:', e);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -87,7 +85,6 @@ const voteSurvey = async (req, res) => {
     if (e.code === 'SURVEY_CLOSED') return res.status(400).json({ error: 'La encuesta está cerrada' });
     if (e.code === 'SURVEY_NOT_FOUND') return res.status(404).json({ error: 'Encuesta no encontrada' });
 
-    console.error('voteSurvey error:', e);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -116,7 +113,6 @@ const closeSurvey = async (req, res) => {
     await SurveysModel.closeSurvey(surveyId);
     return res.json({ message: 'Encuesta cerrada correctamente' });
   } catch (e) {
-    console.error('closeSurvey error:', e);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

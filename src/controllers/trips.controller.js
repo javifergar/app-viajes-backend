@@ -69,7 +69,6 @@ const getMyTrips = async (req, res) => {
 
     res.json(trips);
   } catch (error) {
-    console.error('Error en getMyCreatedTrips:', error);
     res.status(500).json({ message: 'Error al obtener tus viajes creados' });
   }
 };
@@ -90,7 +89,6 @@ const createTrip = async (req, res) => {
 
     res.json(trip);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Error al crear el viaje' });
   }
 };
@@ -122,7 +120,6 @@ const updateTrip = async (req, res) => {
       viaje_actualizado: updatedTrip,
     });
   } catch (error) {
-    console.error('Error en updateTrip:', error);
     res.status(500).json({ message: 'Error al actualizar el viaje' });
   }
 };

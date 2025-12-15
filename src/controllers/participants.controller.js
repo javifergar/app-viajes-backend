@@ -6,7 +6,6 @@ const { sendPendingRequestEmail } = require('../services/email.service');
 const path = require('path');
 const fs = require('fs');
 
-
 /**
  * 1. VER UNA DETERMINADA SOLICITUD
  * GET /api/participants/:participation_id
@@ -23,7 +22,6 @@ const getParticipation = async (req, res) => {
 
     res.json(participation);
   } catch (error) {
-    console.error('Error in getParticipation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -45,7 +43,6 @@ const getParticipantsByTrip = async (req, res) => {
 
     res.json(participants);
   } catch (error) {
-    console.error('Error in getParticipantsByTrip:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -67,7 +64,6 @@ const getMyRequests = async (req, res) => {
 
     res.json(requests);
   } catch (error) {
-    console.error('Error in getMyRequests:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -89,7 +85,6 @@ const getMyCreatorRequests = async (req, res) => {
 
     res.json(requests);
   } catch (error) {
-    console.error('Error in getMyCreatorRequests:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -127,7 +122,6 @@ const createParticipation = async (req, res) => {
     const existing = await ParticipantsModel.selectByTripAndUser(tripId, userId);
 
     if (existing) {
-      console.log('❌ Solicitud rechazada: Ya existe'); // <--- LOG 2
       return res.status(400).json({
         error: 'You already have a request for this trip',
       });
@@ -135,30 +129,23 @@ const createParticipation = async (req, res) => {
 
     // Insertar en la bbdd la solicitud de participación
     const insertId = await ParticipantsModel.insertParticipation(tripId, userId, message);
-    console.log('✅ Participación insertada ID:', insertId); // <--- LOG 3
-    
+
     const newParticipation = await ParticipantsModel.selectParticipationById(insertId);
-    console.log('📧 Intentando enviar email...'); // <--- LOG 4
-    
+
     // Enviar email al creador del viaje notificando nueva solicitud (en segundo plano)
     sendPendingRequestEmail(newParticipation)
       .then((result) => {
         if (result.success) {
-          console.log('✅ Email enviado correctamente a:', result.email);
         } else {
-          console.warn('⚠️ Email NO enviado. Razón:', result.reason);
         }
       })
-      .catch(err => console.error('❌ Error enviando email:', err.message));
+      .catch((err) => console.error('❌ Error enviando email:', err.message));
 
     return res.status(201).json(newParticipation);
-
   } catch (error) {
-    console.error('Error in createParticipation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 /**
  * 6. CAMBIAR EL ESTADO DE UNA SOLICITUD/PARTICIPANTE
@@ -166,8 +153,8 @@ const createParticipation = async (req, res) => {
  * { "status": "accepted" }
  * { "status": "rejected" }
  * { "status": "left" }
-  * { "status": "pending" }
-  */
+ * { "status": "pending" }
+ */
 const updateParticipationStatus = async (req, res) => {
   try {
     const { participationId } = req.params;
@@ -187,8 +174,6 @@ const updateParticipationStatus = async (req, res) => {
 
     return res.status(200).json(updatedParticipation);
   } catch (error) {
-    console.error('Error in updateParticipationStatus:', error);
-
     if (error.code === 'INVALID_STATUS') {
       return res.status(400).json({ error: 'Invalid status value. Set accepted, rejected, left or pending' });
     }
@@ -238,7 +223,6 @@ const getParticipantsInfo = async (req, res) => {
 
     return res.json(participantsInfo);
   } catch (error) {
-    console.error('Error in getParticipantsInfo:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -246,7 +230,7 @@ const getParticipantsInfo = async (req, res) => {
 /**
  * 8. BORRAR UNA PARTICIPACIÓN
  * DELETE /api/participants/:participationId
- * 
+ *
  * Reglas:
  * - Solo se puede borrar si la participación está en estado pending <-- comentado por el momento
  * - Solo puede borrar el usuario que creó la participación (id_user)
@@ -255,9 +239,7 @@ const deleteParticipation = async (req, res) => {
   try {
     const { participationId } = req.params;
 
-
     const userId = req.user.id_user;
-
 
     //Comprobar la participación
     const participation = await ParticipantsModel.selectParticipationById(participationId);
@@ -284,13 +266,11 @@ const deleteParticipation = async (req, res) => {
     // Borrado fisico
     const affectedRows = await ParticipantsModel.deleteParticipation(participationId);
 
-
     return res.json({
       message: 'Participation deleted successfully',
       participationId: Number(participationId),
     });
   } catch (error) {
-    console.error('Error in deleteParticipation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -338,13 +318,10 @@ const handleParticipationAction = async (req, res) => {
     // Enviamos el resultado como query params (ej: ?action=accept&status=success)
     const successMessage = `action=${action}&status=success`;
     return res.redirect(302, `${frontendRedirectUrl}?${successMessage}`);
-
   } catch (error) {
     let errorMsg = 'Error al procesar la solicitud';
     if (error.name === 'TokenExpiredError') {
       errorMsg = 'Token expirado. La solicitud no fue procesada.';
-    } else {
-      console.error('Error al manejar la acción de participación:', error);
     }
 
     // 4. Redirección con Error (general o expiración)

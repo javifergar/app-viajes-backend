@@ -14,16 +14,18 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
   const { userId } = req.params;
   const user = await UsersModel.selectById(userId);
-  delete user.password; // Mario recomienda no enviar la pass aunque esté encriptada. Comento la linea hasta que averiguemos como modificar el usuario por completo de una manera segura
+
   if (!user) return res.status(404).json({ message: 'Id Usuario no existe' });
+  delete user.password;
   res.json(user);
 };
 
 const getByEmail = async (req, res) => {
   const { email } = req.params;
   const user = await UsersModel.selectByEmail(email);
-  delete user.password;
+
   if (!user) return res.status(404).json({ message: 'Email incorrecto o no existe' });
+  delete user.password;
   res.json(user);
 };
 
@@ -59,7 +61,6 @@ const update = async (req, res) => {
     delete userModified.password;
     res.json(userModified);
   } catch (error) {
-    console.error('Error al modificar el usuario:', error);
     return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
   }
 };
@@ -91,7 +92,6 @@ const updateAllUser = async (req, res) => {
     delete userModified.password;
     res.json(userModified);
   } catch (error) {
-    console.error('Error al modificar el usuario:', error);
     return res.status(500).json({ error: 'Error interno al modificar el usuario!' });
   }
 };
@@ -103,7 +103,6 @@ const remove = async (req, res) => {
     if (!success) return res.status(404).json({ message: 'Id de Usuario no existe' });
     res.json({ message: `El usuario con id [${userId}] ha sido eliminado con éxito.` });
   } catch (error) {
-    console.error('Error en controlador remove:', error);
     return res.status(500).json({ error: 'Error interno al eliminar el usuario' });
   }
 };
