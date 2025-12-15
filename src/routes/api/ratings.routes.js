@@ -2,6 +2,8 @@ const router = require('express').Router();
 const ratings = require('../../controllers/ratings.controller');
 const { checkTripExists } = require('../../middlewares/tripValidation.middleware');
 
+router.get('/trip/:tripId/me', checkTripExists, ratings.getMyRatingsForTrip);
+
 // Valoraciones de un viaje concreto
 router.get('/trip/:tripId', checkTripExists, ratings.getRatingsByTrip);
 
