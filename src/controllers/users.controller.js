@@ -16,7 +16,7 @@ const getById = async (req, res) => {
   const user = await UsersModel.selectById(userId);
 
   if (!user) return res.status(404).json({ message: 'Id Usuario no existe' });
-  delete user.password;
+
   res.json(user);
 };
 
@@ -25,7 +25,7 @@ const getByEmail = async (req, res) => {
   const user = await UsersModel.selectByEmail(email);
 
   if (!user) return res.status(404).json({ message: 'Email incorrecto o no existe' });
-  delete user.password;
+
   res.json(user);
 };
 
